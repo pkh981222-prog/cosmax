@@ -1497,6 +1497,20 @@
   let playerName = "플레이어";
   let selectedGame = "rps";
 
+  // 뱀 게임/오셀로/수박 게임의 최고 기록을 브라우저에 저장해두고, 새로 접속해도
+  // 계속 이어서 "이번엔 넘을 수 있을까"하는 동기가 들도록 유지한다.
+  function loadBestScore(key) {
+    const v = parseInt(localStorage.getItem(key), 10);
+    return Number.isFinite(v) ? v : 0;
+  }
+  function saveBestScore(key, value) {
+    try {
+      localStorage.setItem(key, String(value));
+    } catch (e) {
+      // 저장 공간 접근이 막힌 환경(예: 일부 임베드 iframe)에서도 게임 자체는 계속되도록 한다.
+    }
+  }
+
   function showScreen(id) {
     SCREENS.forEach(s => document.getElementById(s).classList.toggle("hidden", s !== id));
   }
@@ -2149,6 +2163,19 @@
   let snakeCurrentInterval = SNAKE_BASE_INTERVAL;
   let snakeRunning = false;
   let snakeAppleCount = 0;
+  let snakeBestScore = loadBestScore("cosmax_snake_best");
+
+  function renderSnakeScoreboard() {
+    document.getElementById("snakeScoreboard").innerHTML =
+      `<span>🏆 최고 ${snakeBestScore}</span><span>🍎 사과 ${snakeAppleCount}</span><span>📏 길이 ${snakeBody.length}</span>`;
+  }
+
+  function bumpSnakeBest() {
+    if (snakeAppleCount > snakeBestScore) {
+      snakeBestScore = snakeAppleCount;
+      saveBestScore("cosmax_snake_best", snakeBestScore);
+    }
+  }
 
   function initSnakeState() {
     clearTimeout(snakeTimer);
@@ -2170,8 +2197,7 @@
     renderSnakeTerrain();
     drawSnakeBoard();
 
-    document.getElementById("snakeScoreboard").innerHTML =
-      `<span>🍎 사과 0</span><span>📏 길이 ${snakeBody.length}</span>`;
+    renderSnakeScoreboard();
     document.getElementById("snakeResultBanner").textContent = "";
     document.getElementById("snakeStartButton").classList.remove("hidden");
     document.getElementById("snakeRetryButton").classList.add("hidden");
@@ -2331,14 +2357,14 @@
     snakeBody.unshift(newHead);
     if (willEatApple) {
       snakeAppleCount++;
+      bumpSnakeBest();
       placeSnakeApple();
     } else {
       snakeBody.pop();
     }
 
     drawSnakeBoard();
-    document.getElementById("snakeScoreboard").innerHTML =
-      `<span>🍎 사과 ${snakeAppleCount}</span><span>📏 길이 ${snakeBody.length}</span>`;
+    renderSnakeScoreboard();
 
     scheduleSnakeTick();
   }
@@ -2375,6 +2401,7 @@
   let othelloValidMoves = new Map();
   let othelloBusy = false;
   let othelloGameOver = false;
+  let othelloBestScore = loadBestScore("cosmax_othello_best");
 
   function initOthelloState() {
     othelloBoard = Array.from({ length: OTHELLO_SIZE }, () => new Array(OTHELLO_SIZE).fill(null));
@@ -2476,7 +2503,7 @@
   function updateOthelloScoreboard() {
     const counts = othelloCountStones();
     document.getElementById("othelloScoreboard").innerHTML =
-      `<span>⚫ 흑 ${counts.black}</span><span>⚪ 백 ${counts.white}</span>`;
+      `<span>🏆 최고 ${othelloBestScore}</span><span>⚫ 흑 ${counts.black}</span><span>⚪ 백 ${counts.white}</span>`;
   }
 
   function updateOthelloTurnSubtitle() {
@@ -2558,10 +2585,17 @@
 
   function endOthelloGame() {
     othelloGameOver = true;
-    updateOthelloScoreboard();
     renderOthelloBoard();
 
     const counts = othelloCountStones();
+    // 이긴 쪽의 돌 개수를 기록으로 삼아, 다음 판에서 그 기록을 넘기고 싶게 만든다(무승부는 기록 대상 아님).
+    const winnerCount = Math.max(counts.black, counts.white);
+    if (counts.black !== counts.white && winnerCount > othelloBestScore) {
+      othelloBestScore = winnerCount;
+      saveBestScore("cosmax_othello_best", othelloBestScore);
+    }
+    updateOthelloScoreboard();
+
     let resultText, bannerClass, titleText;
     if (counts.black > counts.white) {
       resultText = `🎉 ⚫ 흑 승리! (${counts.black} : ${counts.white})`;
@@ -2645,6 +2679,7 @@
   let wmCurrentFruit = null;
   let wmNextTier = 0;
   let wmScore = 0;
+  let wmBestScore = loadBestScore("cosmax_watermelon_best");
   let wmRunning = false;
   let wmDropCooldown = false;
   let wmOverLineTimer = 0;
@@ -2687,7 +2722,14 @@
   function updateWatermelonScoreboard() {
     const nextEmoji = WATERMELON_TIERS[wmNextTier].emoji;
     document.getElementById("watermelonScoreboard").innerHTML =
-      `<span>🏆 점수 ${wmScore}</span><span>다음 ${nextEmoji}</span>`;
+      `<span>🥇 최고 ${wmBestScore}</span><span>🏆 점수 ${wmScore}</span><span>다음 ${nextEmoji}</span>`;
+  }
+
+  function bumpWatermelonBest() {
+    if (wmScore > wmBestScore) {
+      wmBestScore = wmScore;
+      saveBestScore("cosmax_watermelon_best", wmBestScore);
+    }
   }
 
   function startWatermelonGame() {
@@ -2847,14 +2889,22 @@
           }
 
           // 접선 방향 마찰: 서로 미끄러지는 속도를 질량 비례로 줄여 자연스럽게 맞물려 구르게 한다.
-          const tx = -ny, ty = nx;
-          const rvAfterX = b.vx - a.vx, rvAfterY = b.vy - a.vy;
-          const relTangent = rvAfterX * tx + rvAfterY * ty;
-          const jt = -relTangent * WATERMELON_CONTACT_FRICTION / (invMassA + invMassB);
-          a.vx -= jt * tx * invMassA;
-          a.vy -= jt * ty * invMassA;
-          b.vx += jt * tx * invMassB;
-          b.vy += jt * ty * invMassB;
+          // 한 프레임에 안정성을 위해 resolveWatermelonCollisions를 여러 패스(6회) 반복하는데,
+          // 마찰을 매 패스마다 다시 적용하면 같은 접촉에 마찰 계수가 누적으로 곱해져
+          // (1-0.22)^6 ≈ 22%만 남는 셈이 되어, 경사면에서 실제로는 거의 못 미끄러지고
+          // 겹침 보정만으로 조금씩 밀려나는 부자연스러운 움직임이 된다.
+          // 그래서 마찰은 한 틱에 한 번(첫 패스)만 적용해 중력에 의한 자연스러운
+          // 가속 슬라이딩이 매 프레임 마찰로 상쇄되지 않도록 한다.
+          if (detectMerges) {
+            const tx = -ny, ty = nx;
+            const rvAfterX = b.vx - a.vx, rvAfterY = b.vy - a.vy;
+            const relTangent = rvAfterX * tx + rvAfterY * ty;
+            const jt = -relTangent * WATERMELON_CONTACT_FRICTION / (invMassA + invMassB);
+            a.vx -= jt * tx * invMassA;
+            a.vy -= jt * ty * invMassA;
+            b.vx += jt * tx * invMassB;
+            b.vy += jt * ty * invMassB;
+          }
         }
       }
     }
@@ -2870,6 +2920,7 @@
 
       if (type === "poof") {
         wmScore += WATERMELON_POOF_BONUS;
+        bumpWatermelonBest();
         playAnimatedBanner(document.getElementById("watermelonResultBanner"), `🍉🍉 수박 합체 보너스! +${WATERMELON_POOF_BONUS}`, "win");
         setTimeout(() => {
           const banner = document.getElementById("watermelonResultBanner");
@@ -2892,6 +2943,7 @@
         spawnTime: performance.now() - WATERMELON_GRACE_MS
       });
       wmScore += WATERMELON_TIERS[newTier].score;
+      bumpWatermelonBest();
     });
 
     updateWatermelonScoreboard();
