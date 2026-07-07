@@ -1497,15 +1497,27 @@
   let playerName = "플레이어";
   let selectedGame = "rps";
 
-  // 뱀 게임/오셀로/수박 게임의 최고 기록을 브라우저에 저장해두고, 새로 접속해도
+  // 뱀 게임/오셀로/수박 게임의 최고 기록(점수+이름)을 브라우저에 저장해두고, 새로 접속해도
   // 계속 이어서 "이번엔 넘을 수 있을까"하는 동기가 들도록 유지한다.
-  function loadBestScore(key) {
-    const v = parseInt(localStorage.getItem(key), 10);
-    return Number.isFinite(v) ? v : 0;
-  }
-  function saveBestScore(key, value) {
+  function loadBestRecord(key) {
     try {
-      localStorage.setItem(key, String(value));
+      const raw = localStorage.getItem(key);
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        // 이전 버전에서는 숫자만 저장했으므로 하위 호환을 위해 함께 처리한다.
+        if (typeof parsed === "number" && Number.isFinite(parsed)) {
+          return { score: parsed, name: "" };
+        }
+        if (parsed && Number.isFinite(parsed.score)) {
+          return { score: parsed.score, name: parsed.name || "" };
+        }
+      }
+    } catch (e) {}
+    return { score: 0, name: "" };
+  }
+  function saveBestRecord(key, score, name) {
+    try {
+      localStorage.setItem(key, JSON.stringify({ score, name }));
     } catch (e) {
       // 저장 공간 접근이 막힌 환경(예: 일부 임베드 iframe)에서도 게임 자체는 계속되도록 한다.
     }
@@ -1546,10 +1558,8 @@
     selectedGame = game;
     if (game === "ladder") {
       showScreen("ladderSetupScreen");
-    } else if (game === "othello") {
-      initOthelloState();
-      showScreen("othelloScreen");
     } else {
+      // 오셀로도 최고 기록에 이름을 남길 수 있도록 다른 게임처럼 이름 입력을 거치게 한다.
       showScreen("nameScreen");
     }
   }
@@ -1572,6 +1582,9 @@
       setBoldNameSubtitle("watermelonSubtitle", "님, 과일을 떨어뜨려 수박을 만들어보세요!");
       initWatermelonState();
       showScreen("watermelonScreen");
+    } else if (selectedGame === "othello") {
+      initOthelloState();
+      showScreen("othelloScreen");
     }
   }
 
@@ -2163,17 +2176,18 @@
   let snakeCurrentInterval = SNAKE_BASE_INTERVAL;
   let snakeRunning = false;
   let snakeAppleCount = 0;
-  let snakeBestScore = loadBestScore("cosmax_snake_best");
+  let snakeBest = loadBestRecord("cosmax_snake_best");
 
   function renderSnakeScoreboard() {
+    const bestLabel = snakeBest.name ? `🏆 최고 ${snakeBest.score} (${snakeBest.name})` : `🏆 최고 ${snakeBest.score}`;
     document.getElementById("snakeScoreboard").innerHTML =
-      `<span>🏆 최고 ${snakeBestScore}</span><span>🍎 사과 ${snakeAppleCount}</span><span>📏 길이 ${snakeBody.length}</span>`;
+      `<span>${bestLabel}</span><span>🍎 사과 ${snakeAppleCount}</span><span>📏 길이 ${snakeBody.length}</span>`;
   }
 
   function bumpSnakeBest() {
-    if (snakeAppleCount > snakeBestScore) {
-      snakeBestScore = snakeAppleCount;
-      saveBestScore("cosmax_snake_best", snakeBestScore);
+    if (snakeAppleCount > snakeBest.score) {
+      snakeBest = { score: snakeAppleCount, name: playerName };
+      saveBestRecord("cosmax_snake_best", snakeBest.score, snakeBest.name);
     }
   }
 
@@ -2401,7 +2415,7 @@
   let othelloValidMoves = new Map();
   let othelloBusy = false;
   let othelloGameOver = false;
-  let othelloBestScore = loadBestScore("cosmax_othello_best");
+  let othelloBest = loadBestRecord("cosmax_othello_best");
 
   function initOthelloState() {
     othelloBoard = Array.from({ length: OTHELLO_SIZE }, () => new Array(OTHELLO_SIZE).fill(null));
@@ -2502,8 +2516,9 @@
 
   function updateOthelloScoreboard() {
     const counts = othelloCountStones();
+    const bestLabel = othelloBest.name ? `🏆 최고 ${othelloBest.score} (${othelloBest.name})` : `🏆 최고 ${othelloBest.score}`;
     document.getElementById("othelloScoreboard").innerHTML =
-      `<span>🏆 최고 ${othelloBestScore}</span><span>⚫ 흑 ${counts.black}</span><span>⚪ 백 ${counts.white}</span>`;
+      `<span>${bestLabel}</span><span>⚫ 흑 ${counts.black}</span><span>⚪ 백 ${counts.white}</span>`;
   }
 
   function updateOthelloTurnSubtitle() {
@@ -2590,9 +2605,9 @@
     const counts = othelloCountStones();
     // 이긴 쪽의 돌 개수를 기록으로 삼아, 다음 판에서 그 기록을 넘기고 싶게 만든다(무승부는 기록 대상 아님).
     const winnerCount = Math.max(counts.black, counts.white);
-    if (counts.black !== counts.white && winnerCount > othelloBestScore) {
-      othelloBestScore = winnerCount;
-      saveBestScore("cosmax_othello_best", othelloBestScore);
+    if (counts.black !== counts.white && winnerCount > othelloBest.score) {
+      othelloBest = { score: winnerCount, name: playerName };
+      saveBestRecord("cosmax_othello_best", othelloBest.score, othelloBest.name);
     }
     updateOthelloScoreboard();
 
@@ -2679,7 +2694,7 @@
   let wmCurrentFruit = null;
   let wmNextTier = 0;
   let wmScore = 0;
-  let wmBestScore = loadBestScore("cosmax_watermelon_best");
+  let wmBest = loadBestRecord("cosmax_watermelon_best");
   let wmRunning = false;
   let wmDropCooldown = false;
   let wmOverLineTimer = 0;
@@ -2721,14 +2736,15 @@
 
   function updateWatermelonScoreboard() {
     const nextEmoji = WATERMELON_TIERS[wmNextTier].emoji;
+    const bestLabel = wmBest.name ? `🥇 최고 ${wmBest.score} (${wmBest.name})` : `🥇 최고 ${wmBest.score}`;
     document.getElementById("watermelonScoreboard").innerHTML =
-      `<span>🥇 최고 ${wmBestScore}</span><span>🏆 점수 ${wmScore}</span><span>다음 ${nextEmoji}</span>`;
+      `<span>${bestLabel}</span><span>🏆 점수 ${wmScore}</span><span>다음 ${nextEmoji}</span>`;
   }
 
   function bumpWatermelonBest() {
-    if (wmScore > wmBestScore) {
-      wmBestScore = wmScore;
-      saveBestScore("cosmax_watermelon_best", wmBestScore);
+    if (wmScore > wmBest.score) {
+      wmBest = { score: wmScore, name: playerName };
+      saveBestRecord("cosmax_watermelon_best", wmBest.score, wmBest.name);
     }
   }
 
