@@ -2602,12 +2602,21 @@
   const WATERMELON_GRAVITY = 1000;
   const WATERMELON_TERMINAL_VY = 1400;
   const WATERMELON_FLOOR_FRICTION = 0.9;
-  const WATERMELON_WALL_RESTITUTION = 0.15;
-  const WATERMELON_FLOOR_RESTITUTION = 0.05;
-  const WATERMELON_FRUIT_RESTITUTION = 0;
+  // 가장 작은(가벼운) 과일과 가장 큰(무거운) 과일의 반발력을 따로 두고 크기에 따라 보간한다.
+  // 가벼운 과일은 통통 튀고, 무거운 과일은 부딪혀도 거의 튀지 않아야 자연스럽다.
+  const WATERMELON_WALL_RESTITUTION_MIN = 0.05;
+  const WATERMELON_WALL_RESTITUTION_MAX = 0.35;
+  const WATERMELON_FLOOR_RESTITUTION_MIN = 0.02;
+  const WATERMELON_FLOOR_RESTITUTION_MAX = 0.22;
+  const WATERMELON_FRUIT_RESTITUTION_MAX = 0.28;
   const WATERMELON_CONTACT_FRICTION = 0.22;
   const WATERMELON_AIR_DRAG = 0.999;
   const WATERMELON_RESOLVE_PASSES = 6;
+  // 겹침 보정을 한 번에 100% 적용하면 여러 과일이 쌓였을 때 서로 밀어내며 미세하게
+  // 떨리는 현상(지터)이 생기므로, 일부만 보정(percent)하고 아주 작은 겹침은 무시(slop)한다.
+  const WATERMELON_CORRECTION_PERCENT = 0.8;
+  const WATERMELON_CORRECTION_SLOP = 0.5;
+  const WATERMELON_MAX_SPIN = 720;
   const WATERMELON_VELOCITY_EPS = 4;
   const WATERMELON_GAMEOVER_DELAY = 1000;
   const WATERMELON_GRACE_MS = 500;
@@ -2706,18 +2715,33 @@
   }
 
   function watermelonMass(f) {
-    return f.r * f.r;
+    // 원(구)의 부피는 반지름의 세제곱에 비례하므로, 반지름 제곱(면적)보다 세제곱(부피)을
+    // 질량으로 쓰면 큰 과일과 작은 과일의 무게 차이가 훨씬 실감나게 드러난다.
+    return f.r * f.r * f.r;
+  }
+
+  // 가장 작은 과일(0)~가장 큰 과일(1) 사이에서 현재 반지름의 위치를 0~1로 정규화한다.
+  function watermelonSizeFactor(r) {
+    const minR = WATERMELON_TIERS[0].r;
+    const maxR = WATERMELON_TIERS[WATERMELON_TIERS.length - 1].r;
+    return Math.max(0, Math.min(1, (r - minR) / (maxR - minR)));
   }
 
   function clampWatermelonWalls() {
     wmFruits.forEach(f => {
+      const sizeFactor = watermelonSizeFactor(f.r);
+      const wallRestitution = WATERMELON_WALL_RESTITUTION_MAX -
+        (WATERMELON_WALL_RESTITUTION_MAX - WATERMELON_WALL_RESTITUTION_MIN) * sizeFactor;
+      const floorRestitution = WATERMELON_FLOOR_RESTITUTION_MAX -
+        (WATERMELON_FLOOR_RESTITUTION_MAX - WATERMELON_FLOOR_RESTITUTION_MIN) * sizeFactor;
+
       if (f.x - f.r < 0) {
         f.x = f.r;
-        if (f.vx < 0) f.vx = -f.vx * WATERMELON_WALL_RESTITUTION;
+        if (f.vx < 0) f.vx = -f.vx * wallRestitution;
       }
       if (f.x + f.r > WATERMELON_VW) {
         f.x = WATERMELON_VW - f.r;
-        if (f.vx > 0) f.vx = -f.vx * WATERMELON_WALL_RESTITUTION;
+        if (f.vx > 0) f.vx = -f.vx * wallRestitution;
       }
       if (f.y - f.r < 0) {
         f.y = f.r;
@@ -2725,7 +2749,7 @@
       }
       if (f.y + f.r > WATERMELON_VH) {
         f.y = WATERMELON_VH - f.r;
-        if (f.vy > 0) f.vy = -f.vy * WATERMELON_FLOOR_RESTITUTION;
+        if (f.vy > 0) f.vy = -f.vy * floorRestitution;
         f.vx *= WATERMELON_FLOOR_FRICTION;
       }
     });
@@ -2738,7 +2762,12 @@
       f.x += f.vx * dt;
       f.y += f.vy * dt;
       f.vx *= WATERMELON_AIR_DRAG;
-      f.rotation = (f.rotation || 0) + (f.vx / f.r) * dt * (180 / Math.PI);
+
+      // 굴러가는 속도(vx/r)를 그대로 쓰면 작은 과일이 비정상적으로 빠르게 회전해 보이므로
+      // 회전 속도에 상한을 둬서 크기와 무관하게 시각적으로 자연스럽게 굴러가도록 한다.
+      let spinDeg = (f.vx / f.r) * (180 / Math.PI);
+      spinDeg = Math.max(-WATERMELON_MAX_SPIN, Math.min(WATERMELON_MAX_SPIN, spinDeg));
+      f.rotation = (f.rotation || 0) + spinDeg * dt;
     });
 
     clampWatermelonWalls();
@@ -2787,8 +2816,10 @@
           const invMassA = 1 / massA, invMassB = 1 / massB;
 
           // 겹친 만큼 밀어내되, 무거운(큰) 과일은 덜 밀리고 가벼운 과일이 더 밀리도록
-          // 질량 비율로 위치를 보정한다.
-          const overlap = minDist - dist;
+          // 질량 비율로 위치를 보정한다. 겹침을 한 번에 100% 밀어내면 여러 과일이
+          // 쌓였을 때 서로 밀어내다 미세하게 계속 떨리므로(지터), 아주 작은 겹침은
+          // 무시(slop)하고 나머지도 일부만(percent) 보정해 부드럽게 수렴시킨다.
+          const overlap = Math.max(0, minDist - dist - WATERMELON_CORRECTION_SLOP) * WATERMELON_CORRECTION_PERCENT;
           const corrA = overlap * (massB / totalMass);
           const corrB = overlap * (massA / totalMass);
           a.x -= nx * corrA;
@@ -2798,10 +2829,16 @@
 
           // 질량 기반 충돌 임펄스: 법선 방향 상대속도를 이용해 실제 당구공 충돌처럼
           // 무거운 과일은 거의 밀리지 않고 가벼운 과일이 크게 튕겨나가도록 계산한다.
+          // 반발력도 두 과일의 무게 차이에서 유도한다: 크기가 비슷하면 부딪혀도 거의
+          // 튀지 않고(무게감 있게 붙어서 눌리는 느낌), 크기 차이가 크면 가벼운 쪽이
+          // 무거운 쪽에 맞고 통통 튀어야 자연스럽다.
+          const massRatio = Math.min(massA, massB) / Math.max(massA, massB);
+          const restitution = WATERMELON_FRUIT_RESTITUTION_MAX * (1 - massRatio);
+
           const rvx = b.vx - a.vx, rvy = b.vy - a.vy;
           const velAlongNormal = rvx * nx + rvy * ny;
           if (velAlongNormal < 0) {
-            const j = -(1 + WATERMELON_FRUIT_RESTITUTION) * velAlongNormal / (invMassA + invMassB);
+            const j = -(1 + restitution) * velAlongNormal / (invMassA + invMassB);
             const ix = j * nx, iy = j * ny;
             a.vx -= ix * invMassA;
             a.vy -= iy * invMassA;
