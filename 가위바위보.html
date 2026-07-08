@@ -1398,6 +1398,52 @@
     font-size: 13px;
     white-space: nowrap;
   }
+  .tetris-keymap-diagram {
+    display: flex;
+    justify-content: center;
+    gap: 28px;
+    margin: 10px 0 20px;
+    flex-wrap: wrap;
+  }
+  .tetris-keymap-col {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+  }
+  .tetris-keymap-title {
+    font-size: 12px;
+    font-weight: 800;
+    color: #4A2C1D;
+    margin-bottom: 2px;
+  }
+  .tetris-keymap-row {
+    display: flex;
+    gap: 4px;
+  }
+  .tetris-key {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    border-radius: 6px;
+    background: #FBEFE0;
+    box-shadow: 0 2px 4px rgba(74,44,23,0.25), inset 0 1px 0 rgba(255,255,255,0.6);
+    font-size: 11px;
+    font-weight: 800;
+    color: #3D2817;
+    line-height: 1.1;
+  }
+  .tetris-key span {
+    font-size: 8px;
+    font-weight: 600;
+    color: #7A5A42;
+  }
+  .tetris-key.wide {
+    width: 100px;
+  }
   .tp-GARBAGE {
     background: #8a8a8a;
   }
@@ -1885,9 +1931,45 @@
     <input type="text" class="name-input" id="tetrisP2NameInput" placeholder="2P 이름" maxlength="10"
       onkeydown="if(event.key==='Enter') startTetrisVersusGame()">
     <p class="subtitle ms-hint">
-      1P: A/D 이동, S 소프트드롭, W 시계회전, Q 반시계회전, E 하드드롭, Tab 홀드<br>
-      2P: ←/→ 이동, ↓ 소프트드롭, ↑ 시계회전, . 반시계회전, Enter 하드드롭, / 홀드
+      1P: A/D 이동, S 소프트드롭, W 시계회전, Q 반시계회전, 왼쪽 Shift 하드드롭, Tab 홀드<br>
+      2P: ←/→ 이동, ↓ 소프트드롭, ↑ 시계회전, . 반시계회전, , 하드드롭, / 홀드
     </p>
+
+    <div class="tetris-keymap-diagram">
+      <div class="tetris-keymap-col">
+        <div class="tetris-keymap-title">1P (왼쪽)</div>
+        <div class="tetris-keymap-row" style="margin-left:0">
+          <div class="tetris-key">Tab<span>홀드</span></div>
+          <div class="tetris-key">Q<span>↺</span></div>
+          <div class="tetris-key">W<span>↻</span></div>
+        </div>
+        <div class="tetris-keymap-row" style="margin-left:16px">
+          <div class="tetris-key">A<span>◀</span></div>
+          <div class="tetris-key">S<span>▼</span></div>
+          <div class="tetris-key">D<span>▶</span></div>
+        </div>
+        <div class="tetris-keymap-row" style="margin-left:4px">
+          <div class="tetris-key wide">Shift<span>⬇ 하드드롭</span></div>
+        </div>
+      </div>
+      <div class="tetris-keymap-col">
+        <div class="tetris-keymap-title">2P (오른쪽)</div>
+        <div class="tetris-keymap-row" style="margin-left:40px">
+          <div class="tetris-key">↑<span>↻</span></div>
+        </div>
+        <div class="tetris-keymap-row">
+          <div class="tetris-key">←<span>◀</span></div>
+          <div class="tetris-key">↓<span>▼</span></div>
+          <div class="tetris-key">→<span>▶</span></div>
+        </div>
+        <div class="tetris-keymap-row">
+          <div class="tetris-key">,<span>⬇ 하드드롭</span></div>
+          <div class="tetris-key">.<span>↺</span></div>
+          <div class="tetris-key">/<span>홀드</span></div>
+        </div>
+      </div>
+    </div>
+
     <button class="retry-button" onclick="startTetrisVersusGame()">⚔️ 대결 시작!</button>
     <button class="home-button" onclick="showScreen('tetrisModeScreen')">🔙 뒤로</button>
   </div>
@@ -5384,14 +5466,14 @@
     else if (key === "s" || key === "S") { tetrisVsP1.softDropHeld = true; e.preventDefault(); }
     else if (key === "w" || key === "W") { tetrisVsRotate(tetrisVsP1, 1); e.preventDefault(); }
     else if (key === "q" || key === "Q") { tetrisVsRotate(tetrisVsP1, -1); e.preventDefault(); }
-    else if (key === "e" || key === "E") { tetrisVsHardDrop(tetrisVsP1); e.preventDefault(); }
+    else if (e.code === "ShiftLeft") { tetrisVsHardDrop(tetrisVsP1); e.preventDefault(); }
     else if (key === "Tab") { tetrisVsHold(tetrisVsP1); e.preventDefault(); }
     else if (key === "ArrowLeft") { tetrisVsMoveHorizontal(tetrisVsP2, -1); e.preventDefault(); }
     else if (key === "ArrowRight") { tetrisVsMoveHorizontal(tetrisVsP2, 1); e.preventDefault(); }
     else if (key === "ArrowDown") { tetrisVsP2.softDropHeld = true; e.preventDefault(); }
     else if (key === "ArrowUp") { tetrisVsRotate(tetrisVsP2, 1); e.preventDefault(); }
     else if (key === ".") { tetrisVsRotate(tetrisVsP2, -1); e.preventDefault(); }
-    else if (key === "Enter") { tetrisVsHardDrop(tetrisVsP2); e.preventDefault(); }
+    else if (key === ",") { tetrisVsHardDrop(tetrisVsP2); e.preventDefault(); }
     else if (key === "/") { tetrisVsHold(tetrisVsP2); e.preventDefault(); }
   });
   document.addEventListener("keyup", (e) => {
