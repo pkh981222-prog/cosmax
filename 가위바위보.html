@@ -1184,6 +1184,77 @@
     animation: rankNameIn 0.5s ease forwards;
     animation-delay: 0.2s;
   }
+  .ms-board-wrap {
+    overflow-x: auto;
+    margin: 10px auto 14px;
+    max-width: 100%;
+    padding-bottom: 6px;
+  }
+  .ms-board {
+    display: inline-grid;
+    gap: 2px;
+    background: #4A2C1D;
+    padding: 6px;
+    border-radius: 8px;
+    margin: 0 auto;
+  }
+  .ms-cell {
+    width: 26px;
+    height: 26px;
+    min-width: 26px;
+    min-height: 26px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    font-weight: 800;
+    border-radius: 4px;
+    background: #FBEFE0;
+    box-shadow: 0 2px 4px rgba(74,44,23,0.25), inset 0 1px 0 rgba(255,255,255,0.6);
+    cursor: pointer;
+    user-select: none;
+    -webkit-user-select: none;
+    touch-action: manipulation;
+    transition: transform 0.1s ease, background 0.1s ease;
+  }
+  .ms-cell:hover {
+    background: #F3DFC0;
+  }
+  .ms-cell:active {
+    transform: scale(0.92);
+  }
+  .ms-cell.revealed {
+    background: #EFE3CF;
+    box-shadow: inset 0 0 0 1px rgba(74,44,23,0.2);
+    cursor: default;
+  }
+  .ms-cell.revealed:hover {
+    background: #EFE3CF;
+  }
+  .ms-cell.revealed:active {
+    transform: none;
+  }
+  .ms-cell.mine {
+    background: #F3B0AC;
+  }
+  .ms-cell.mine.exploded {
+    background: #E5484D;
+  }
+  .ms-cell.wrong-flag {
+    position: relative;
+    background: #F3B0AC;
+  }
+  .ms-cell.wrong-flag::after {
+    content: "";
+    position: absolute;
+    inset: 18%;
+    background:
+      linear-gradient(45deg, transparent 44%, #B23A3A 44% 56%, transparent 56%),
+      linear-gradient(-45deg, transparent 44%, #B23A3A 44% 56%, transparent 56%);
+  }
+  @media (max-width: 480px) {
+    .ms-cell { width: 22px; height: 22px; min-width: 22px; min-height: 22px; font-size: 12px; }
+  }
   @media (max-width: 900px) {
     .choices { display: grid; grid-template-columns: repeat(2, 1fr); justify-items: center; }
   }
@@ -1274,6 +1345,7 @@
       <button class="retry-button" onclick="chooseGame('snake')">🐍 뱀게임</button>
       <button class="retry-button" onclick="chooseGame('othello')">⚫⚪ 오셀로</button>
       <button class="retry-button" onclick="chooseGame('watermelon')">🍉 수박게임</button>
+      <button class="retry-button" onclick="chooseGame('minesweeper')">💣 지뢰찾기</button>
     </div>
   </div>
 
@@ -1459,6 +1531,42 @@
     <button class="home-button" onclick="showIntro()">🏠 처음으로</button>
   </div>
 
+  <div class="card hidden" id="minesweeperSetupScreen">
+    <h1>💣 지뢰찾기</h1>
+    <p class="subtitle">난이도를 선택하세요!</p>
+    <div class="game-select">
+      <button class="retry-button" onclick="startMinesweeperGame('beginner')">🟢 초급 (9×9, 지뢰 10개)</button>
+      <button class="retry-button" onclick="startMinesweeperGame('intermediate')">🟡 중급 (16×16, 지뢰 40개)</button>
+      <button class="retry-button" onclick="startMinesweeperGame('expert')">🔴 상급 (30×16, 지뢰 99개)</button>
+    </div>
+    <button class="home-button" onclick="showIntro()">🏠 처음으로</button>
+  </div>
+
+  <div class="card hidden" id="minesweeperScreen">
+    <h1>💣 지뢰찾기</h1>
+    <p class="subtitle" id="minesweeperSubtitle">지뢰를 피해 칸을 열어보세요!</p>
+
+    <div class="scoreboard" id="minesweeperInfo">
+      <span>💣 <span id="msMineCounter">10</span></span>
+      <span>⏱ <span id="msTimerDisplay">0</span>초</span>
+    </div>
+
+    <button class="home-button" id="msFlagModeButton" onclick="toggleMinesweeperFlagMode()">🚩 깃발 모드: OFF</button>
+    <p class="subtitle ladder-hint">(PC는 우클릭으로 깃발, 모바일은 깃발 모드를 켠 뒤 탭하세요. 숫자 칸 더블클릭 시 주변을 한번에 엽니다.)</p>
+
+    <div class="ms-board-wrap">
+      <div class="ms-board" id="minesweeperBoard"></div>
+    </div>
+
+    <div class="result-box">
+      <div class="result-banner" id="minesweeperResultBanner"></div>
+    </div>
+
+    <button class="retry-button hidden" id="minesweeperRetryButton" onclick="restartMinesweeperGame()">🔄 다시하기</button>
+    <button class="home-button" onclick="showScreen('minesweeperSetupScreen')">🎚 난이도 다시 선택</button>
+    <button class="home-button" onclick="showIntro()">🏠 처음으로</button>
+  </div>
+
   <div class="ladder-rank-popup" id="ladderRankPopup">
     <div class="ladder-rank-popup-inner">
       <div class="ladder-rank-popup-flash" id="ladderRankPopupFlash"></div>
@@ -1492,7 +1600,8 @@
   const SCREENS = [
     "introScreen", "nameScreen", "gameScreen",
     "ladderSetupScreen", "ladderNamesScreen", "ladderBoardScreen",
-    "rouletteSetupScreen", "rouletteScreen", "snakeScreen", "othelloScreen", "watermelonScreen"
+    "rouletteSetupScreen", "rouletteScreen", "snakeScreen", "othelloScreen", "watermelonScreen",
+    "minesweeperSetupScreen", "minesweeperScreen"
   ];
   let playerName = "플레이어";
   let selectedGame = "rps";
@@ -1558,6 +1667,8 @@
     selectedGame = game;
     if (game === "ladder") {
       showScreen("ladderSetupScreen");
+    } else if (game === "minesweeper") {
+      showScreen("minesweeperSetupScreen");
     } else {
       // 오셀로도 최고 기록에 이름을 남길 수 있도록 다른 게임처럼 이름 입력을 거치게 한다.
       showScreen("nameScreen");
@@ -3130,6 +3241,308 @@
       e.preventDefault();
     }, { passive: false });
   })();
+
+  // ---- 지뢰찾기 ----
+  const MINESWEEPER_DIFFICULTIES = {
+    beginner: { label: "초급", cols: 9, rows: 9, mines: 10 },
+    intermediate: { label: "중급", cols: 16, rows: 16, mines: 40 },
+    expert: { label: "상급", cols: 30, rows: 16, mines: 99 }
+  };
+  // 클래식 지뢰찾기 숫자 색상: 1 파랑, 2 초록, 3 빨강, 4 남색, 5 밤색, 6 청록, 7 검정, 8 회색
+  const MS_NUMBER_COLORS = ["", "#1858E0", "#1E8A3C", "#E0201A", "#0B1F8F", "#7A1B1B", "#128A8A", "#1A1A1A", "#666666"];
+
+  let msDifficulty = "beginner";
+  let msCols = 9;
+  let msRows = 9;
+  let msMineCount = 10;
+  let msBoard = [];
+  let msCellEls = [];
+  let msFirstClick = true;
+  let msGameOver = false;
+  let msFlagsPlaced = 0;
+  let msRevealedCount = 0;
+  let msFlagMode = false;
+  let msTimer = 0;
+  let msTimerInterval = null;
+
+  function msNeighbors(r, c) {
+    const result = [];
+    for (let dr = -1; dr <= 1; dr++) {
+      for (let dc = -1; dc <= 1; dc++) {
+        if (dr === 0 && dc === 0) continue;
+        const nr = r + dr, nc = c + dc;
+        if (nr >= 0 && nr < msRows && nc >= 0 && nc < msCols) result.push([nr, nc]);
+      }
+    }
+    return result;
+  }
+
+  function initMinesweeperState(difficultyKey) {
+    const preset = MINESWEEPER_DIFFICULTIES[difficultyKey];
+    msDifficulty = difficultyKey;
+    msCols = preset.cols;
+    msRows = preset.rows;
+    msMineCount = preset.mines;
+    msFirstClick = true;
+    msGameOver = false;
+    msFlagsPlaced = 0;
+    msRevealedCount = 0;
+    msFlagMode = false;
+    stopMinesweeperTimer();
+    msTimer = 0;
+
+    msBoard = Array.from({ length: msRows }, () =>
+      Array.from({ length: msCols }, () => ({
+        mine: false, revealed: false, flag: "none", adjacent: 0, exploded: false, wrongFlag: false
+      }))
+    );
+
+    renderMinesweeperBoardSkeleton();
+    updateMinesweeperInfo();
+    document.getElementById("minesweeperResultBanner").textContent = "";
+    document.getElementById("minesweeperRetryButton").classList.add("hidden");
+    document.getElementById("msFlagModeButton").textContent = "🚩 깃발 모드: OFF";
+    document.getElementById("minesweeperSubtitle").textContent =
+      `${preset.label} (${msCols}×${msRows}, 지뢰 ${msMineCount}개) - 지뢰를 피해 칸을 열어보세요!`;
+  }
+
+  function startMinesweeperGame(difficultyKey) {
+    initMinesweeperState(difficultyKey);
+    showScreen("minesweeperScreen");
+  }
+
+  function restartMinesweeperGame() {
+    initMinesweeperState(msDifficulty);
+  }
+
+  function toggleMinesweeperFlagMode() {
+    msFlagMode = !msFlagMode;
+    document.getElementById("msFlagModeButton").textContent =
+      msFlagMode ? "🚩 깃발 모드: ON" : "🚩 깃발 모드: OFF";
+  }
+
+  function renderMinesweeperBoardSkeleton() {
+    const board = document.getElementById("minesweeperBoard");
+    board.innerHTML = "";
+    board.style.gridTemplateColumns = `repeat(${msCols}, 1fr)`;
+    msCellEls = [];
+    for (let r = 0; r < msRows; r++) {
+      const rowEls = [];
+      for (let c = 0; c < msCols; c++) {
+        const cellEl = document.createElement("div");
+        cellEl.className = "ms-cell";
+        cellEl.onclick = () => handleMinesweeperClick(r, c);
+        cellEl.oncontextmenu = (e) => { e.preventDefault(); toggleMinesweeperFlag(r, c); };
+        cellEl.ondblclick = (e) => { e.preventDefault(); chordMinesweeperCell(r, c); };
+        board.appendChild(cellEl);
+        rowEls.push(cellEl);
+      }
+      msCellEls.push(rowEls);
+    }
+  }
+
+  function updateMinesweeperInfo() {
+    document.getElementById("msMineCounter").textContent = Math.max(0, msMineCount - msFlagsPlaced);
+    document.getElementById("msTimerDisplay").textContent = msTimer;
+  }
+
+  function startMinesweeperTimer() {
+    stopMinesweeperTimer();
+    msTimer = 0;
+    updateMinesweeperInfo();
+    msTimerInterval = setInterval(() => {
+      msTimer++;
+      updateMinesweeperInfo();
+    }, 1000);
+  }
+
+  function stopMinesweeperTimer() {
+    if (msTimerInterval) clearInterval(msTimerInterval);
+    msTimerInterval = null;
+  }
+
+  // 처음 클릭한 칸에는 지뢰가 배치되지 않도록, 첫 클릭 이후에 지뢰 위치를 정한다.
+  function placeMinesweeperMines(excludeR, excludeC) {
+    const totalCells = msRows * msCols;
+    const excludeIdx = excludeR * msCols + excludeC;
+    const indices = [];
+    for (let i = 0; i < totalCells; i++) {
+      if (i !== excludeIdx) indices.push(i);
+    }
+    for (let i = indices.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [indices[i], indices[j]] = [indices[j], indices[i]];
+    }
+    const mineIdx = new Set(indices.slice(0, msMineCount));
+
+    for (let r = 0; r < msRows; r++) {
+      for (let c = 0; c < msCols; c++) {
+        msBoard[r][c].mine = mineIdx.has(r * msCols + c);
+      }
+    }
+    for (let r = 0; r < msRows; r++) {
+      for (let c = 0; c < msCols; c++) {
+        if (msBoard[r][c].mine) continue;
+        let count = 0;
+        for (const [nr, nc] of msNeighbors(r, c)) {
+          if (msBoard[nr][nc].mine) count++;
+        }
+        msBoard[r][c].adjacent = count;
+      }
+    }
+  }
+
+  function handleMinesweeperClick(r, c) {
+    if (msGameOver) return;
+    if (msFlagMode) {
+      toggleMinesweeperFlag(r, c);
+    } else {
+      revealMinesweeperCell(r, c);
+    }
+  }
+
+  function revealMinesweeperCell(r, c) {
+    if (msGameOver) return;
+    const cell = msBoard[r][c];
+    if (cell.revealed || cell.flag === "flag") return;
+
+    if (msFirstClick) {
+      placeMinesweeperMines(r, c);
+      msFirstClick = false;
+      startMinesweeperTimer();
+    }
+
+    if (cell.mine) {
+      cell.revealed = true;
+      cell.exploded = true;
+      updateMinesweeperCellView(r, c);
+      endMinesweeperGame(false);
+      return;
+    }
+
+    // 빈 칸(주변 지뢰 0개)은 연쇄적으로 주변까지 자동으로 열어준다.
+    const stack = [[r, c]];
+    while (stack.length) {
+      const [cr, cc] = stack.pop();
+      const cur = msBoard[cr][cc];
+      if (cur.revealed || cur.flag === "flag") continue;
+      cur.revealed = true;
+      msRevealedCount++;
+      updateMinesweeperCellView(cr, cc);
+      if (cur.adjacent === 0) {
+        for (const [nr, nc] of msNeighbors(cr, cc)) {
+          const n = msBoard[nr][nc];
+          if (!n.revealed && n.flag !== "flag") stack.push([nr, nc]);
+        }
+      }
+    }
+
+    checkMinesweeperWin();
+  }
+
+  function toggleMinesweeperFlag(r, c) {
+    if (msGameOver) return;
+    const cell = msBoard[r][c];
+    if (cell.revealed) return;
+
+    if (cell.flag === "none") {
+      cell.flag = "flag";
+      msFlagsPlaced++;
+    } else if (cell.flag === "flag") {
+      cell.flag = "question";
+      msFlagsPlaced--;
+    } else {
+      cell.flag = "none";
+    }
+    updateMinesweeperCellView(r, c);
+    updateMinesweeperInfo();
+  }
+
+  // 숫자 칸 더블클릭(체이닝): 주변에 꽂힌 깃발 수가 숫자와 같으면 나머지 미확인 칸을 한번에 연다.
+  // 깃발이 잘못 꽂혀 있으면 그 칸에서 바로 게임 오버가 될 수 있다.
+  function chordMinesweeperCell(r, c) {
+    if (msGameOver) return;
+    const cell = msBoard[r][c];
+    if (!cell.revealed || cell.adjacent <= 0) return;
+
+    const neighbors = msNeighbors(r, c);
+    const flagCount = neighbors.filter(([nr, nc]) => msBoard[nr][nc].flag === "flag").length;
+    if (flagCount !== cell.adjacent) return;
+
+    for (const [nr, nc] of neighbors) {
+      const n = msBoard[nr][nc];
+      if (!n.revealed && n.flag !== "flag") {
+        revealMinesweeperCell(nr, nc);
+        if (msGameOver) return;
+      }
+    }
+  }
+
+  function checkMinesweeperWin() {
+    const totalSafe = msRows * msCols - msMineCount;
+    if (msRevealedCount >= totalSafe) {
+      endMinesweeperGame(true);
+    }
+  }
+
+  function endMinesweeperGame(win) {
+    msGameOver = true;
+    stopMinesweeperTimer();
+
+    for (let r = 0; r < msRows; r++) {
+      for (let c = 0; c < msCols; c++) {
+        const cell = msBoard[r][c];
+        if (win) {
+          if (cell.mine && cell.flag !== "flag") cell.flag = "flag";
+        } else {
+          if (cell.mine && cell.flag !== "flag") cell.revealed = true;
+          if (!cell.mine && cell.flag === "flag") cell.wrongFlag = true;
+        }
+        updateMinesweeperCellView(r, c);
+      }
+    }
+
+    updateMinesweeperInfo();
+    const banner = document.getElementById("minesweeperResultBanner");
+    if (win) {
+      playAnimatedBanner(banner, `🎉 클리어! (${msTimer}초)`, "win");
+    } else {
+      playAnimatedBanner(banner, `💥 게임 오버!`, "lose");
+    }
+    document.getElementById("minesweeperRetryButton").classList.remove("hidden");
+  }
+
+  function updateMinesweeperCellView(r, c) {
+    const cell = msBoard[r][c];
+    const el = msCellEls[r][c];
+    el.className = "ms-cell";
+    el.style.color = "";
+    el.textContent = "";
+
+    if (cell.revealed) {
+      el.classList.add("revealed");
+      if (cell.mine) {
+        el.classList.add("mine");
+        if (cell.exploded) el.classList.add("exploded");
+        el.textContent = "💣";
+      } else if (cell.adjacent > 0) {
+        el.textContent = String(cell.adjacent);
+        el.style.color = MS_NUMBER_COLORS[cell.adjacent];
+      }
+      return;
+    }
+
+    if (cell.wrongFlag) {
+      el.classList.add("wrong-flag");
+      el.textContent = "🚩";
+    } else if (cell.flag === "flag") {
+      el.classList.add("flagged");
+      el.textContent = "🚩";
+    } else if (cell.flag === "question") {
+      el.classList.add("question");
+      el.textContent = "❓";
+    }
+  }
 </script>
 </body>
 </html>
