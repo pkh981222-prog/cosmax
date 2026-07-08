@@ -1206,6 +1206,15 @@
     font-size: 17px;
     text-shadow: 0 1px 0 rgba(255,255,255,0.5);
   }
+  .othello-vs-line {
+    font-weight: 800;
+    color: #3D2817;
+    font-size: 18px;
+    margin-bottom: 10px;
+  }
+  .othello-vs-line strong {
+    font-weight: 900;
+  }
   .ms-hint {
     margin-top: 10px;
   }
@@ -1708,8 +1717,20 @@
     <button class="home-button" onclick="showIntro()">🏠 처음으로</button>
   </div>
 
+  <div class="card hidden" id="othelloNamesScreen">
+    <h1>⚫⚪ 오셀로 게임</h1>
+    <p class="subtitle">두 사람의 이름을 알려주세요!</p>
+    <input type="text" class="name-input" id="othelloBlackNameInput" placeholder="⚫ 흑 플레이어 이름" maxlength="10"
+      onkeydown="if(event.key==='Enter') document.getElementById('othelloWhiteNameInput').focus()">
+    <input type="text" class="name-input" id="othelloWhiteNameInput" placeholder="⚪ 백 플레이어 이름" maxlength="10"
+      onkeydown="if(event.key==='Enter') startOthelloWithNames()">
+    <button class="retry-button" onclick="startOthelloWithNames()">🚀 대결 시작!</button>
+    <button class="home-button" onclick="showIntro()">🏠 처음으로</button>
+  </div>
+
   <div class="card hidden" id="othelloScreen">
     <h1>⚫⚪ 오셀로 게임</h1>
+    <p class="subtitle othello-vs-line" id="othelloVsLine"></p>
     <p class="subtitle" id="othelloSubtitle">⚫ 흑 차례입니다!</p>
 
     <div class="scoreboard" id="othelloScoreboard">
@@ -1900,7 +1921,7 @@
   const SCREENS = [
     "introScreen", "nameScreen", "gameScreen",
     "ladderSetupScreen", "ladderNamesScreen", "ladderBoardScreen",
-    "rouletteSetupScreen", "rouletteScreen", "snakeScreen", "othelloScreen", "watermelonScreen",
+    "rouletteSetupScreen", "rouletteScreen", "snakeScreen", "othelloNamesScreen", "othelloScreen", "watermelonScreen",
     "minesweeperSetupScreen", "minesweeperScreen", "tetrisScreen"
   ];
   let playerName = "플레이어";
@@ -1941,9 +1962,17 @@
     combined.sort((a, b) => ascending ? (a[valueKey] - b[valueKey]) : (b[valueKey] - a[valueKey]));
     return combined.slice(0, 3);
   }
+  // 다른 사람이 입력한 이름이 innerHTML로 그대로 삽입되는 곳(리더보드 등)이 있으므로,
+  // 공유 서버에서 받아온 이름에 악성 태그가 들어있어도 그냥 글자로만 보이게 이스케이프한다.
+  function escapeHtml(str) {
+    return String(str).replace(/[&<>"']/g, (ch) => (
+      { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[ch]
+    ));
+  }
   function formatRecordEntry(entry, valueKey, unit) {
     if (!entry) return null;
-    return entry.name ? `${entry[valueKey]}${unit} (${entry.name})` : `${entry[valueKey]}${unit}`;
+    const safeName = entry.name ? escapeHtml(entry.name) : "";
+    return safeName ? `${entry[valueKey]}${unit} (${safeName})` : `${entry[valueKey]}${unit}`;
   }
   function renderTopLabel(list, valueKey, unit) {
     const formatted = formatRecordEntry(list[0], valueKey, unit);
@@ -2024,8 +2053,11 @@
     selectedGame = game;
     if (game === "ladder") {
       showScreen("ladderSetupScreen");
+    } else if (game === "othello") {
+      // 오셀로는 대결 게임이라 흑/백 두 사람의 이름을 각각 받는다.
+      showScreen("othelloNamesScreen");
     } else {
-      // 오셀로/지뢰찾기도 최고 기록에 이름을 남길 수 있도록 다른 게임처럼 이름 입력을 거치게 한다.
+      // 지뢰찾기 등도 최고 기록에 이름을 남길 수 있도록 다른 게임처럼 이름 입력을 거치게 한다.
       showScreen("nameScreen");
     }
   }
@@ -2048,9 +2080,6 @@
       setBoldNameSubtitle("watermelonSubtitle", "님, 과일을 떨어뜨려 수박을 만들어보세요!");
       initWatermelonState();
       showScreen("watermelonScreen");
-    } else if (selectedGame === "othello") {
-      initOthelloState();
-      showScreen("othelloScreen");
     } else if (selectedGame === "minesweeper") {
       showScreen("minesweeperSetupScreen");
     } else if (selectedGame === "tetris") {
@@ -2913,6 +2942,17 @@
   let othelloBusy = false;
   let othelloGameOver = false;
   let othelloTop = loadTopList("cosmax_othello_top3");
+  let othelloBlackName = "흑";
+  let othelloWhiteName = "백";
+
+  function startOthelloWithNames() {
+    const blackInput = document.getElementById("othelloBlackNameInput").value.trim();
+    const whiteInput = document.getElementById("othelloWhiteNameInput").value.trim();
+    othelloBlackName = blackInput || "흑";
+    othelloWhiteName = whiteInput || "백";
+    initOthelloState();
+    showScreen("othelloScreen");
+  }
 
   function initOthelloState() {
     othelloBoard = Array.from({ length: OTHELLO_SIZE }, () => new Array(OTHELLO_SIZE).fill(null));
@@ -2928,6 +2968,8 @@
 
     document.getElementById("othelloResultBanner").textContent = "";
     document.getElementById("othelloRetryButton").classList.add("hidden");
+    document.getElementById("othelloVsLine").innerHTML =
+      `⚫ <strong>${escapeHtml(othelloBlackName)}</strong> &nbsp;VS&nbsp; ⚪ <strong>${escapeHtml(othelloWhiteName)}</strong>`;
 
     renderOthelloBoard();
     updateOthelloScoreboard();
@@ -3040,7 +3082,8 @@
   }
 
   function updateOthelloTurnSubtitle() {
-    const turnLabel = othelloTurn === "black" ? "⚫ 흑" : "⚪ 백";
+    const turnLabel = othelloTurn === "black" ? `⚫ ${othelloBlackName}` : `⚪ ${othelloWhiteName}`;
+    // textContent를 쓰므로 이름에 특수문자가 있어도 안전하게 그대로 글자로만 표시된다.
     document.getElementById("othelloSubtitle").textContent = `${turnLabel} 차례입니다!`;
   }
 
@@ -3105,8 +3148,8 @@
 
     const currentMoves = getOthelloValidMoves(othelloBoard, othelloTurn);
     if (currentMoves.size > 0) {
-      const passLabel = nextColor === "black" ? "⚫ 흑" : "⚪ 백";
-      const stayLabel = othelloTurn === "black" ? "⚫ 흑" : "⚪ 백";
+      const passLabel = nextColor === "black" ? `⚫ ${othelloBlackName}` : `⚪ ${othelloWhiteName}`;
+      const stayLabel = othelloTurn === "black" ? `⚫ ${othelloBlackName}` : `⚪ ${othelloWhiteName}`;
       renderOthelloBoard();
       document.getElementById("othelloSubtitle").textContent =
         `${passLabel}은(는) 둘 곳이 없어 패스! 다시 ${stayLabel} 차례입니다.`;
@@ -3122,9 +3165,11 @@
 
     const counts = othelloCountStones();
     // 이긴 쪽의 돌 개수를 기록으로 삼아, 다음 판에서 그 기록을 넘기고 싶게 만든다(무승부는 기록 대상 아님).
+    // 기록에는 공용 playerName이 아니라 실제로 이긴 사람의 흑/백 이름을 남긴다.
     const winnerCount = Math.max(counts.black, counts.white);
+    const winnerName = counts.black > counts.white ? othelloBlackName : othelloWhiteName;
     if (counts.black !== counts.white) {
-      const updated = mergeTopLists(othelloTop, [{ score: winnerCount, name: playerName }], "score", false);
+      const updated = mergeTopLists(othelloTop, [{ score: winnerCount, name: winnerName }], "score", false);
       if (JSON.stringify(updated) !== JSON.stringify(othelloTop)) {
         othelloTop = updated;
         saveTopList("cosmax_othello_top3", othelloTop);
@@ -3135,12 +3180,12 @@
 
     let resultText, bannerClass, titleText;
     if (counts.black > counts.white) {
-      resultText = `🎉 ⚫ 흑 승리! (${counts.black} : ${counts.white})`;
-      titleText = "⚫ 흑 승리!";
+      resultText = `🎉 ⚫ ${othelloBlackName} 승리! (${counts.black} : ${counts.white})`;
+      titleText = `⚫ ${othelloBlackName} 승리!`;
       bannerClass = "win";
     } else if (counts.white > counts.black) {
-      resultText = `🎉 ⚪ 백 승리! (${counts.white} : ${counts.black})`;
-      titleText = "⚪ 백 승리!";
+      resultText = `🎉 ⚪ ${othelloWhiteName} 승리! (${counts.white} : ${counts.black})`;
+      titleText = `⚪ ${othelloWhiteName} 승리!`;
       bannerClass = "win";
     } else {
       resultText = `🤝 무승부! (${counts.black} : ${counts.white})`;
