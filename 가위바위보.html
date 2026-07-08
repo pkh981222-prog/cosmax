@@ -1644,11 +1644,7 @@
   }
 
   // ---- 전체 사용자 공유 최고기록 (Firebase Realtime Database) ----
-  // 아래 URL을 본인의 Firebase 프로젝트 Realtime Database 주소로 교체해야 다른 사람과
-  // 기록이 공유된다. (Firebase 콘솔 > Realtime Database 화면 상단에 표시되는
-  // https://프로젝트ID-default-rtdb.리전.firebasedatabase.app 형태의 주소)
-  // 교체하지 않으면 자동으로 이 브라우저에만 기록이 남는 이전 방식으로 동작한다.
-  const FIREBASE_DB_URL = "https://REPLACE-WITH-YOUR-PROJECT.firebasedatabase.app";
+  const FIREBASE_DB_URL = "https://mini-game-a75a7-default-rtdb.us-central1.firebasedatabase.app";
 
   function isFirebaseConfigured() {
     return !!FIREBASE_DB_URL && !FIREBASE_DB_URL.includes("REPLACE-WITH-YOUR-PROJECT");
