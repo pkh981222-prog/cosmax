@@ -3569,6 +3569,9 @@
   let othelloTop = loadTopList("cosmax_othello_top3");
   let othelloBlackName = "흑";
   let othelloWhiteName = "백";
+  let othelloTurnTimer = null;
+  let othelloTimeLeft = 0;
+  const OTHELLO_TURN_LIMIT_SEC = 15;
 
   function startOthelloWithNames() {
     const blackInput = document.getElementById("othelloBlackNameInput").value.trim();
@@ -3590,6 +3593,7 @@
     othelloTurn = "black";
     othelloBusy = false;
     othelloGameOver = false;
+    clearOthelloTurnTimer();
 
     document.getElementById("othelloResultBanner").textContent = "";
     document.getElementById("othelloRetryButton").classList.add("hidden");
@@ -3598,8 +3602,36 @@
 
     renderOthelloBoard();
     updateOthelloScoreboard();
-    updateOthelloTurnSubtitle();
+    startOthelloTurnTimer();
     refreshOthelloBestFromServer();
+  }
+
+  function clearOthelloTurnTimer() {
+    clearInterval(othelloTurnTimer);
+    othelloTurnTimer = null;
+  }
+
+  // 한 수를 15초 안에 두지 않으면 그 차례인 사람이 바로 패배한다.
+  function startOthelloTurnTimer() {
+    clearOthelloTurnTimer();
+    if (othelloGameOver) return;
+    othelloTimeLeft = OTHELLO_TURN_LIMIT_SEC;
+    updateOthelloTurnSubtitle();
+    othelloTurnTimer = setInterval(() => {
+      othelloTimeLeft--;
+      if (othelloTimeLeft <= 0) {
+        clearOthelloTurnTimer();
+        handleOthelloTimeout();
+        return;
+      }
+      updateOthelloTurnSubtitle();
+    }, 1000);
+  }
+
+  function handleOthelloTimeout() {
+    if (othelloGameOver) return;
+    othelloBusy = true;
+    endOthelloGame(othelloTurn);
   }
 
   // 다른 사람이 이미 이 브라우저의 캐시된 순위보다 더 좋은 기록을 세워뒀을 수 있으므로
@@ -3709,7 +3741,7 @@
   function updateOthelloTurnSubtitle() {
     const turnLabel = othelloTurn === "black" ? `⚫ ${othelloBlackName}` : `⚪ ${othelloWhiteName}`;
     // textContent를 쓰므로 이름에 특수문자가 있어도 안전하게 그대로 글자로만 표시된다.
-    document.getElementById("othelloSubtitle").textContent = `${turnLabel} 차례입니다!`;
+    document.getElementById("othelloSubtitle").textContent = `${turnLabel} 차례입니다! (⏱ ${othelloTimeLeft}초)`;
   }
 
   function handleOthelloCellClick(r, c) {
@@ -3718,6 +3750,7 @@
     const flips = othelloValidMoves.get(key);
     if (!flips || flips.length === 0) return;
 
+    clearOthelloTurnTimer();
     othelloBusy = true;
     const color = othelloTurn;
     othelloBoard[r][c] = color;
@@ -3767,7 +3800,7 @@
     if (nextMoves.size > 0) {
       othelloTurn = nextColor;
       renderOthelloBoard();
-      updateOthelloTurnSubtitle();
+      startOthelloTurnTimer();
       return;
     }
 
@@ -3776,24 +3809,38 @@
       const passLabel = nextColor === "black" ? `⚫ ${othelloBlackName}` : `⚪ ${othelloWhiteName}`;
       const stayLabel = othelloTurn === "black" ? `⚫ ${othelloBlackName}` : `⚪ ${othelloWhiteName}`;
       renderOthelloBoard();
+      clearOthelloTurnTimer();
       document.getElementById("othelloSubtitle").textContent =
         `${passLabel}은(는) 둘 곳이 없어 패스! 다시 ${stayLabel} 차례입니다.`;
+      setTimeout(startOthelloTurnTimer, 1200);
       return;
     }
 
     endOthelloGame();
   }
 
-  function endOthelloGame() {
+  // timeoutLoserColor가 있으면 그 색이 제한시간을 넘겨서 진 것으로 처리하고,
+  // 없으면(둘 다 둘 곳이 없는 정상 종료) 돌 개수로 승패를 가린다.
+  function endOthelloGame(timeoutLoserColor) {
     othelloGameOver = true;
+    clearOthelloTurnTimer();
     renderOthelloBoard();
 
     const counts = othelloCountStones();
+    let winnerColor;
+    if (timeoutLoserColor) {
+      winnerColor = othelloOpponent(timeoutLoserColor);
+    } else if (counts.black !== counts.white) {
+      winnerColor = counts.black > counts.white ? "black" : "white";
+    } else {
+      winnerColor = null;
+    }
+
     // 이긴 쪽의 돌 개수를 기록으로 삼아, 다음 판에서 그 기록을 넘기고 싶게 만든다(무승부는 기록 대상 아님).
     // 기록에는 공용 playerName이 아니라 실제로 이긴 사람의 흑/백 이름을 남긴다.
-    const winnerCount = Math.max(counts.black, counts.white);
-    const winnerName = counts.black > counts.white ? othelloBlackName : othelloWhiteName;
-    if (counts.black !== counts.white) {
+    if (winnerColor) {
+      const winnerCount = winnerColor === "black" ? counts.black : counts.white;
+      const winnerName = winnerColor === "black" ? othelloBlackName : othelloWhiteName;
       const updated = mergeTopLists(othelloTop, [{ score: winnerCount, name: winnerName }], "score", false);
       if (JSON.stringify(updated) !== JSON.stringify(othelloTop)) {
         othelloTop = updated;
@@ -3803,13 +3850,14 @@
     }
     updateOthelloScoreboard();
 
+    const timeoutSuffix = timeoutLoserColor ? " (시간 초과)" : "";
     let resultText, bannerClass, titleText;
-    if (counts.black > counts.white) {
-      resultText = `🎉 ⚫ ${othelloBlackName} 승리! (${counts.black} : ${counts.white})`;
+    if (winnerColor === "black") {
+      resultText = `🎉 ⚫ ${othelloBlackName} 승리! (${counts.black} : ${counts.white})${timeoutSuffix}`;
       titleText = `⚫ ${othelloBlackName} 승리!`;
       bannerClass = "win";
-    } else if (counts.white > counts.black) {
-      resultText = `🎉 ⚪ ${othelloWhiteName} 승리! (${counts.white} : ${counts.black})`;
+    } else if (winnerColor === "white") {
+      resultText = `🎉 ⚪ ${othelloWhiteName} 승리! (${counts.white} : ${counts.black})${timeoutSuffix}`;
       titleText = `⚪ ${othelloWhiteName} 승리!`;
       bannerClass = "win";
     } else {
