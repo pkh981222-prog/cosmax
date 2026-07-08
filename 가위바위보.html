@@ -1278,6 +1278,204 @@
       linear-gradient(45deg, transparent 44%, #B23A3A 44% 56%, transparent 56%),
       linear-gradient(-45deg, transparent 44%, #B23A3A 44% 56%, transparent 56%);
   }
+  .tetris-layout {
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    gap: 10px;
+    margin: 4px auto 10px;
+  }
+  .tetris-side {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 64px;
+    flex-shrink: 0;
+  }
+  .tetris-box-label {
+    font-size: 11px;
+    font-weight: 800;
+    color: #4A2C1D;
+    margin-bottom: 4px;
+    letter-spacing: 0.5px;
+  }
+  .tetris-hold, .tetris-next-slot {
+    width: 100%;
+    aspect-ratio: 1 / 1;
+    background: #4A2C1D;
+    border-radius: 8px;
+    box-sizing: border-box;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .tetris-hold.dimmed { opacity: 0.35; }
+  .tetris-next {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .tetris-mini-grid {
+    display: grid;
+    gap: 1px;
+    width: 76%;
+  }
+  .tetris-mini-cell {
+    width: 100%;
+    aspect-ratio: 1 / 1;
+    border-radius: 1px;
+  }
+  .tetris-board-wrap {
+    position: relative;
+    flex: 1 1 auto;
+    max-width: 200px;
+  }
+  .tetris-board {
+    width: 100%;
+    aspect-ratio: 1 / 2;
+    display: grid;
+    grid-template-columns: repeat(10, 1fr);
+    grid-template-rows: repeat(20, 1fr);
+    gap: 1px;
+    background: #2E1B10;
+    border: 3px solid #4A2C1D;
+    border-radius: 6px;
+    box-sizing: border-box;
+    overflow: hidden;
+  }
+  .tetris-cell {
+    background: rgba(255,255,255,0.04);
+  }
+  .tetris-cell.filled {
+    border-radius: 1px;
+    box-shadow: inset -2px -2px 3px rgba(0,0,0,0.35), inset 2px 2px 2px rgba(255,255,255,0.35);
+  }
+  .tetris-cell.ghost {
+    box-shadow: inset 0 0 0 2px rgba(255,255,255,0.55);
+    border-radius: 1px;
+  }
+  .tetris-cell.flashing {
+    animation: tetrisLineFlash 0.35s ease;
+  }
+  @keyframes tetrisLineFlash {
+    0%, 100% { filter: brightness(1); }
+    50% { filter: brightness(2.6); }
+  }
+  .tp-I { background: #29C5F6; }
+  .tp-O { background: #F7CE45; }
+  .tp-T { background: #B15DCB; }
+  .tp-S { background: #63C259; }
+  .tp-Z { background: #F25555; }
+  .tp-J { background: #4C6FD1; }
+  .tp-L { background: #F0973A; }
+  .tetris-controls {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    margin: 10px 0;
+  }
+  .tetris-controls-row {
+    display: flex;
+    gap: 6px;
+  }
+  .tetris-hold-btn {
+    width: auto;
+    padding: 0 10px;
+    font-size: 13px;
+    white-space: nowrap;
+  }
+  .tetris-combo-popup {
+    position: absolute;
+    top: 8px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 13px;
+    font-weight: 800;
+    color: #FFD84D;
+    text-shadow: 1px 1px 0 #4A2C1D;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s ease;
+  }
+  .tetris-combo-popup.show { opacity: 1; }
+  .tetris-clear-popup {
+    position: fixed;
+    inset: 0;
+    z-index: 50;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    pointer-events: none;
+  }
+  .tetris-clear-popup.show { display: flex; }
+  .tetris-clear-inner { position: relative; text-align: center; }
+  .tetris-clear-flash {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(255,255,255,0.95), rgba(255,216,77,0.5) 45%, transparent 72%);
+    transform: translate(-50%, -50%) scale(0);
+    opacity: 0;
+    z-index: -1;
+  }
+  .tetris-clear-popup.show .tetris-clear-flash {
+    animation: rankFlash 0.5s ease-out forwards;
+  }
+  .tetris-clear-text {
+    font-weight: 900;
+    color: #FFD84D;
+    text-shadow:
+      3px 3px 0 #4A2C1D, -3px -3px 0 #4A2C1D,
+      3px -3px 0 #4A2C1D, -3px 3px 0 #4A2C1D,
+      0 12px 26px rgba(0,0,0,0.5);
+    transform: scale(0);
+    white-space: nowrap;
+  }
+  .tetris-clear-popup.show .tetris-clear-text {
+    animation: rankBang 0.7s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+  }
+  .tetris-gameover-popup {
+    position: fixed;
+    inset: 0;
+    z-index: 50;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    pointer-events: none;
+  }
+  .tetris-gameover-popup.show { display: flex; }
+  .tetris-gameover-inner { text-align: center; }
+  .tetris-gameover-title {
+    font-size: clamp(48px, 14vw, 90px);
+    font-weight: 900;
+    color: #fff;
+    letter-spacing: 1px;
+    text-shadow:
+      3px 3px 0 #8B1E1E, -3px -3px 0 #8B1E1E,
+      3px -3px 0 #8B1E1E, -3px 3px 0 #8B1E1E,
+      0 12px 26px rgba(0,0,0,0.5);
+    transform: scale(0);
+  }
+  .tetris-gameover-popup.show .tetris-gameover-title {
+    animation: rankBang 0.8s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+  }
+  .tetris-gameover-score {
+    margin-top: 10px;
+    font-size: clamp(20px, 5vw, 32px);
+    font-weight: 800;
+    color: #FFD84D;
+    text-shadow: 2px 2px 0 #4A2C1D, 0 4px 10px rgba(0,0,0,0.5);
+    opacity: 0;
+  }
+  .tetris-gameover-popup.show .tetris-gameover-score {
+    animation: rankNameIn 0.5s ease forwards;
+    animation-delay: 0.2s;
+  }
   @media (max-width: 900px) {
     .choices { display: grid; grid-template-columns: repeat(2, 1fr); justify-items: center; }
   }
@@ -1369,6 +1567,7 @@
       <button class="retry-button" onclick="chooseGame('othello')">⚫⚪ 오셀로</button>
       <button class="retry-button" onclick="chooseGame('watermelon')">🍉 수박게임</button>
       <button class="retry-button" onclick="chooseGame('minesweeper')">💣 지뢰찾기</button>
+      <button class="retry-button" onclick="chooseGame('tetris')">🧱 테트리스</button>
     </div>
   </div>
 
@@ -1599,6 +1798,72 @@
     <button class="home-button" onclick="showIntro()">🏠 처음으로</button>
   </div>
 
+  <div class="card tetris-card hidden" id="tetrisScreen">
+    <h1>🧱 테트리스</h1>
+    <p class="subtitle" id="tetrisSubtitle">줄을 채워서 없애보세요!</p>
+
+    <div class="scoreboard" id="tetrisInfo">
+      <span id="tetrisBestLabel">🏆 최고 -</span>
+      <span>점수 <span id="tetrisScoreDisplay">0</span></span>
+      <span>레벨 <span id="tetrisLevelDisplay">1</span></span>
+      <span>줄 <span id="tetrisLinesDisplay">0</span></span>
+    </div>
+
+    <div class="tetris-layout">
+      <div class="tetris-side">
+        <div class="tetris-box-label">HOLD</div>
+        <div class="tetris-hold" id="tetrisHold"></div>
+      </div>
+      <div class="tetris-board-wrap">
+        <div class="tetris-board" id="tetrisBoard"></div>
+        <div class="tetris-combo-popup" id="tetrisComboPopup"></div>
+      </div>
+      <div class="tetris-side">
+        <div class="tetris-box-label">NEXT</div>
+        <div class="tetris-next" id="tetrisNext"></div>
+      </div>
+    </div>
+
+    <button class="retry-button" id="tetrisStartButton" onclick="startTetrisGame()">🎮 게임 시작!</button>
+
+    <div class="tetris-controls">
+      <div class="tetris-controls-row">
+        <button class="snake-dir-btn" onclick="tetrisAction('rotateCCW')">↺</button>
+        <button class="snake-dir-btn tetris-hold-btn" onclick="tetrisAction('hold')">홀드</button>
+        <button class="snake-dir-btn" onclick="tetrisAction('rotateCW')">↻</button>
+      </div>
+      <div class="tetris-controls-row">
+        <button class="snake-dir-btn" onclick="tetrisAction('left')">◀</button>
+        <button class="snake-dir-btn" onclick="tetrisAction('softDrop')">▼</button>
+        <button class="snake-dir-btn" onclick="tetrisAction('right')">▶</button>
+      </div>
+      <button class="retry-button" onclick="tetrisAction('hardDrop')">⬇ 하드 드롭</button>
+    </div>
+
+    <div class="result-box">
+      <div class="result-banner" id="tetrisResultBanner"></div>
+    </div>
+
+    <div class="leaderboard" id="tetrisLeaderboard"></div>
+
+    <button class="retry-button hidden" id="tetrisRetryButton" onclick="restartTetrisGame()">🔄 다시하기</button>
+    <button class="home-button" onclick="showIntro()">🏠 처음으로</button>
+  </div>
+
+  <div class="tetris-clear-popup" id="tetrisClearPopup">
+    <div class="tetris-clear-inner">
+      <div class="tetris-clear-flash" id="tetrisClearFlash"></div>
+      <div class="tetris-clear-text" id="tetrisClearText"></div>
+    </div>
+  </div>
+
+  <div class="tetris-gameover-popup" id="tetrisGameOverPopup">
+    <div class="tetris-gameover-inner">
+      <div class="tetris-gameover-title">게임 오버!!</div>
+      <div class="tetris-gameover-score" id="tetrisGameOverScore"></div>
+    </div>
+  </div>
+
   <div class="ladder-rank-popup" id="ladderRankPopup">
     <div class="ladder-rank-popup-inner">
       <div class="ladder-rank-popup-flash" id="ladderRankPopupFlash"></div>
@@ -1633,7 +1898,7 @@
     "introScreen", "nameScreen", "gameScreen",
     "ladderSetupScreen", "ladderNamesScreen", "ladderBoardScreen",
     "rouletteSetupScreen", "rouletteScreen", "snakeScreen", "othelloScreen", "watermelonScreen",
-    "minesweeperSetupScreen", "minesweeperScreen"
+    "minesweeperSetupScreen", "minesweeperScreen", "tetrisScreen"
   ];
   let playerName = "플레이어";
   let selectedGame = "rps";
@@ -1785,6 +2050,10 @@
       showScreen("othelloScreen");
     } else if (selectedGame === "minesweeper") {
       showScreen("minesweeperSetupScreen");
+    } else if (selectedGame === "tetris") {
+      setBoldNameSubtitle("tetrisSubtitle", "님, 줄을 채워서 없애보세요!");
+      initTetrisState();
+      showScreen("tetrisScreen");
     }
   }
 
@@ -3760,6 +4029,683 @@
       el.textContent = "❓";
     }
   }
+
+  // ---- 테트리스 (테트리스 가이드라인 기반: SRS 회전, 7-bag, T-스핀, Back-to-Back, 홀드) ----
+  const TETRIS_COLS = 10;
+  const TETRIS_ROWS = 20;
+  const TETRIS_HIDDEN_ROWS = 2; // 스폰/회전 여유 공간(화면에는 안 보임)
+  const TETRIS_TOTAL_ROWS = TETRIS_ROWS + TETRIS_HIDDEN_ROWS;
+  const TETRIS_PIECE_NAMES = ["I", "O", "T", "S", "Z", "J", "L"];
+  const TETRIS_TICK_MS = 16;
+  const TETRIS_LOCK_DELAY_MS = 500;
+  const TETRIS_MAX_LOCK_RESETS = 15;
+
+  // 각 피스의 4가지 회전 상태(SRS 표준 좌표). T/J/L/S/Z는 3x3, I/O는 4x4/2x2 박스 기준.
+  const TETRIS_SHAPES = {
+    T: [
+      [[0,1,0],[1,1,1],[0,0,0]],
+      [[0,1,0],[0,1,1],[0,1,0]],
+      [[0,0,0],[1,1,1],[0,1,0]],
+      [[0,1,0],[1,1,0],[0,1,0]],
+    ],
+    J: [
+      [[1,0,0],[1,1,1],[0,0,0]],
+      [[0,1,1],[0,1,0],[0,1,0]],
+      [[0,0,0],[1,1,1],[0,0,1]],
+      [[0,1,0],[0,1,0],[1,1,0]],
+    ],
+    L: [
+      [[0,0,1],[1,1,1],[0,0,0]],
+      [[0,1,0],[0,1,0],[0,1,1]],
+      [[0,0,0],[1,1,1],[1,0,0]],
+      [[1,1,0],[0,1,0],[0,1,0]],
+    ],
+    S: [
+      [[0,1,1],[1,1,0],[0,0,0]],
+      [[0,1,0],[0,1,1],[0,0,1]],
+      [[0,0,0],[0,1,1],[1,1,0]],
+      [[1,0,0],[1,1,0],[0,1,0]],
+    ],
+    Z: [
+      [[1,1,0],[0,1,1],[0,0,0]],
+      [[0,0,1],[0,1,1],[0,1,0]],
+      [[0,0,0],[1,1,0],[0,1,1]],
+      [[0,1,0],[1,1,0],[1,0,0]],
+    ],
+    I: [
+      [[0,0,0,0],[1,1,1,1],[0,0,0,0],[0,0,0,0]],
+      [[0,0,1,0],[0,0,1,0],[0,0,1,0],[0,0,1,0]],
+      [[0,0,0,0],[0,0,0,0],[1,1,1,1],[0,0,0,0]],
+      [[0,1,0,0],[0,1,0,0],[0,1,0,0],[0,1,0,0]],
+    ],
+    O: [
+      [[1,1],[1,1]],
+      [[1,1],[1,1]],
+      [[1,1],[1,1]],
+      [[1,1],[1,1]],
+    ],
+  };
+
+  // SRS 벽차기(월킥) 표. 원본 표는 dy>0=위 방향 기준이므로, 아래로 갈수록 y가 커지는
+  // 보드 좌표계에 적용할 때는 부호를 반전해서 써야 한다(tetrisGetKicks에서 처리).
+  const TETRIS_KICKS_JLSTZ = {
+    "0-1": [[0,0],[-1,0],[-1,1],[0,-2],[-1,-2]],
+    "1-0": [[0,0],[1,0],[1,-1],[0,2],[1,2]],
+    "1-2": [[0,0],[1,0],[1,-1],[0,2],[1,2]],
+    "2-1": [[0,0],[-1,0],[-1,1],[0,-2],[-1,-2]],
+    "2-3": [[0,0],[1,0],[1,1],[0,-2],[1,-2]],
+    "3-2": [[0,0],[-1,0],[-1,-1],[0,2],[-1,2]],
+    "3-0": [[0,0],[-1,0],[-1,-1],[0,2],[-1,2]],
+    "0-3": [[0,0],[1,0],[1,1],[0,-2],[1,-2]],
+  };
+  const TETRIS_KICKS_I = {
+    "0-1": [[0,0],[-2,0],[1,0],[-2,-1],[1,2]],
+    "1-0": [[0,0],[2,0],[-1,0],[2,1],[-1,-2]],
+    "1-2": [[0,0],[-1,0],[2,0],[-1,2],[2,-1]],
+    "2-1": [[0,0],[1,0],[-2,0],[1,-2],[-2,1]],
+    "2-3": [[0,0],[2,0],[-1,0],[2,1],[-1,-2]],
+    "3-2": [[0,0],[-2,0],[1,0],[-2,-1],[1,2]],
+    "3-0": [[0,0],[1,0],[-2,0],[1,-2],[-2,1]],
+    "0-3": [[0,0],[-1,0],[2,0],[-1,2],[2,-1]],
+  };
+  // 180도 회전은 표준 SRS 범위 밖이라 공식 킥 표가 없다 - 실용적인 대체 킥을 사용한다.
+  const TETRIS_KICKS_180 = [[0,0],[1,0],[-1,0],[0,-1],[1,-1],[-1,-1],[0,-2]];
+
+  function tetrisGetKicks(name, fromRot, toRot) {
+    if (name === "O") return [[0, 0]];
+    const key = `${fromRot}-${toRot}`;
+    const table = name === "I" ? TETRIS_KICKS_I : TETRIS_KICKS_JLSTZ;
+    const kicks = table[key] || [[0, 0]];
+    return kicks.map(([dx, dy]) => [dx, -dy]);
+  }
+
+  let tetrisBoard = [];
+  let tetrisCellEls = [];
+  let tetrisBag = [];
+  let tetrisNextQueue = [];
+  let tetrisCurrent = null; // { name, rot, row, col }
+  let tetrisHoldPiece = null;
+  let tetrisHoldUsed = false;
+  let tetrisScore = 0;
+  let tetrisLevel = 1;
+  let tetrisLinesCleared = 0;
+  let tetrisCombo = -1;
+  let tetrisBackToBack = false;
+  let tetrisGameOver = false;
+  let tetrisRunning = false;
+  let tetrisSoftDropHeld = false;
+  let tetrisLastActionWasRotate = false;
+  let tetrisAnimFrame = null;
+  let tetrisLastTickTime = 0;
+  let tetrisDropAccumulator = 0;
+  let tetrisLockElapsed = 0;
+  let tetrisLockResets = 0;
+  let tetrisClearPopupTimer = null;
+  let tetrisTop = loadTopList("cosmax_tetris_top3");
+
+  function tetrisBagNext() {
+    if (tetrisBag.length === 0) {
+      tetrisBag = [...TETRIS_PIECE_NAMES];
+      for (let i = tetrisBag.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [tetrisBag[i], tetrisBag[j]] = [tetrisBag[j], tetrisBag[i]];
+      }
+    }
+    return tetrisBag.shift();
+  }
+
+  function tetrisCanPlace(name, rot, row, col) {
+    const shape = TETRIS_SHAPES[name][rot];
+    for (let r = 0; r < shape.length; r++) {
+      for (let c = 0; c < shape[r].length; c++) {
+        if (!shape[r][c]) continue;
+        const br = row + r, bc = col + c;
+        if (bc < 0 || bc >= TETRIS_COLS || br >= TETRIS_TOTAL_ROWS) return false;
+        if (br >= 0 && tetrisBoard[br][bc]) return false;
+      }
+    }
+    return true;
+  }
+
+  function tetrisAttemptShift(dr, dc) {
+    const { name, rot, row, col } = tetrisCurrent;
+    if (tetrisCanPlace(name, rot, row + dr, col + dc)) {
+      tetrisCurrent.row += dr;
+      tetrisCurrent.col += dc;
+      return true;
+    }
+    return false;
+  }
+
+  function tetrisMaybeResetLockDelay() {
+    if (!tetrisCurrent) return;
+    const grounded = !tetrisCanPlace(tetrisCurrent.name, tetrisCurrent.rot, tetrisCurrent.row + 1, tetrisCurrent.col);
+    if (grounded && tetrisLockResets < TETRIS_MAX_LOCK_RESETS) {
+      tetrisLockElapsed = 0;
+      tetrisLockResets++;
+    }
+  }
+
+  function tetrisMoveHorizontal(dir) {
+    if (!tetrisCurrent) return;
+    if (tetrisAttemptShift(0, dir)) {
+      tetrisLastActionWasRotate = false;
+      tetrisMaybeResetLockDelay();
+      tetrisRenderBoard();
+    }
+  }
+
+  function tetrisRotate(dir) {
+    if (!tetrisCurrent || tetrisCurrent.name === "O") return false;
+    const { name, rot } = tetrisCurrent;
+    const toRot = dir === 2 ? (rot + 2) % 4 : (rot + dir + 4) % 4;
+    const kicks = dir === 2 ? TETRIS_KICKS_180 : tetrisGetKicks(name, rot, toRot);
+
+    for (const [dx, dy] of kicks) {
+      if (tetrisCanPlace(name, toRot, tetrisCurrent.row + dy, tetrisCurrent.col + dx)) {
+        tetrisCurrent.rot = toRot;
+        tetrisCurrent.row += dy;
+        tetrisCurrent.col += dx;
+        tetrisLastActionWasRotate = true;
+        tetrisMaybeResetLockDelay();
+        tetrisRenderBoard();
+        return true;
+      }
+    }
+    return false;
+  }
+
+  function tetrisHardDrop() {
+    if (!tetrisCurrent) return;
+    let dist = 0;
+    while (tetrisAttemptShift(1, 0)) dist++;
+    tetrisScore += dist * 2;
+    tetrisUpdateScoreDisplay();
+    tetrisLockPiece();
+  }
+
+  function tetrisGravityStepManual() {
+    if (!tetrisCurrent) return;
+    const moved = tetrisAttemptShift(1, 0);
+    if (moved) {
+      tetrisLastActionWasRotate = false;
+      tetrisScore += 1;
+      tetrisUpdateScoreDisplay();
+      tetrisMaybeResetLockDelay();
+      tetrisRenderBoard();
+    }
+  }
+
+  function tetrisHold() {
+    if (!tetrisCurrent || tetrisHoldUsed) return;
+    const currentName = tetrisCurrent.name;
+    if (tetrisHoldPiece === null) {
+      tetrisHoldPiece = currentName;
+      tetrisSpawnNextPiece();
+    } else {
+      const swapped = tetrisHoldPiece;
+      tetrisHoldPiece = currentName;
+      tetrisSpawnSpecificPiece(swapped);
+    }
+    tetrisHoldUsed = true;
+    tetrisRenderHold();
+  }
+
+  function tetrisSpawnRowFor(name) {
+    const shape = TETRIS_SHAPES[name][0];
+    let topFilled = shape.length;
+    for (let r = 0; r < shape.length; r++) {
+      if (shape[r].some(v => v)) { topFilled = r; break; }
+    }
+    return TETRIS_HIDDEN_ROWS - topFilled;
+  }
+
+  function tetrisSpawnSpecificPiece(name) {
+    const width = TETRIS_SHAPES[name][0][0].length;
+    const col = Math.floor((TETRIS_COLS - width) / 2);
+    const row = tetrisSpawnRowFor(name);
+    tetrisCurrent = { name, rot: 0, row, col };
+    tetrisLastActionWasRotate = false;
+    tetrisLockElapsed = 0;
+    tetrisLockResets = 0;
+    tetrisDropAccumulator = 0;
+
+    if (!tetrisCanPlace(name, 0, row, col)) {
+      tetrisRenderBoard();
+      tetrisGameOverTrigger();
+      return;
+    }
+    tetrisRenderNext();
+    tetrisRenderBoard();
+  }
+
+  function tetrisSpawnNextPiece() {
+    const name = tetrisNextQueue.shift();
+    tetrisNextQueue.push(tetrisBagNext());
+    tetrisSpawnSpecificPiece(name);
+  }
+
+  // T-스핀 3-corner 판정: 마지막 동작이 회전이었고, T피스 중심의 대각선 4칸 중 3칸 이상이
+  // 채워져 있으면(벽/바닥 바깥도 채워진 것으로 취급) T-스핀. "돌출 방향"의 앞쪽 두 모서리가
+  // 모두 채워져 있으면 일반(full) T-스핀, 아니면 미니(mini) T-스핀.
+  function tetrisCheckTSpin(name, rot, row, col) {
+    if (name !== "T" || !tetrisLastActionWasRotate) return null;
+    const centerR = row + 1, centerC = col + 1;
+    const corners = [
+      [centerR - 1, centerC - 1],
+      [centerR - 1, centerC + 1],
+      [centerR + 1, centerC - 1],
+      [centerR + 1, centerC + 1],
+    ];
+    const filled = corners.map(([r, c]) => {
+      if (c < 0 || c >= TETRIS_COLS || r >= TETRIS_TOTAL_ROWS) return true;
+      if (r < 0) return false;
+      return !!tetrisBoard[r][c];
+    });
+    if (filled.filter(Boolean).length < 3) return null;
+
+    const frontIdx = rot === 0 ? [0, 1] : rot === 1 ? [1, 3] : rot === 2 ? [2, 3] : [0, 2];
+    const frontFilled = frontIdx.filter(i => filled[i]).length;
+    return frontFilled < 2 ? "mini" : "full";
+  }
+
+  function tetrisLockPiece() {
+    const { name, rot, row, col } = tetrisCurrent;
+    const shape = TETRIS_SHAPES[name][rot];
+    let anyVisible = false;
+    for (let r = 0; r < shape.length; r++) {
+      for (let c = 0; c < shape[r].length; c++) {
+        if (!shape[r][c]) continue;
+        const br = row + r, bc = col + c;
+        if (br >= 0 && br < TETRIS_TOTAL_ROWS) {
+          tetrisBoard[br][bc] = name;
+          if (br >= TETRIS_HIDDEN_ROWS) anyVisible = true;
+        }
+      }
+    }
+    const tSpinType = tetrisCheckTSpin(name, rot, row, col);
+    tetrisCurrent = null;
+    tetrisRenderBoard();
+
+    if (!anyVisible) {
+      tetrisGameOverTrigger();
+      return;
+    }
+    tetrisProcessLineClears(tSpinType);
+  }
+
+  function tetrisProcessLineClears(tSpinType) {
+    const clearedRows = [];
+    for (let r = 0; r < TETRIS_TOTAL_ROWS; r++) {
+      if (tetrisBoard[r].every(cell => cell !== null)) clearedRows.push(r);
+    }
+    const lineCount = clearedRows.length;
+
+    let baseScore = 0, label = "", isDifficult = false;
+    if (tSpinType) {
+      const mini = tSpinType === "mini";
+      if (lineCount === 0) { baseScore = mini ? 100 : 400; label = mini ? "MINI T-SPIN" : "T-SPIN"; }
+      else if (lineCount === 1) { baseScore = mini ? 200 : 800; label = mini ? "MINI T-SPIN SINGLE" : "T-SPIN SINGLE"; isDifficult = true; }
+      else if (lineCount === 2) { baseScore = mini ? 400 : 1200; label = mini ? "MINI T-SPIN DOUBLE" : "T-SPIN DOUBLE"; isDifficult = true; }
+      else if (lineCount === 3) { baseScore = 1600; label = "T-SPIN TRIPLE"; isDifficult = true; }
+    } else if (lineCount > 0) {
+      const table = { 1: [100, "SINGLE"], 2: [300, "DOUBLE"], 3: [500, "TRIPLE"], 4: [800, "TETRIS"] };
+      baseScore = table[lineCount][0];
+      label = table[lineCount][1];
+      isDifficult = lineCount === 4;
+    }
+
+    let scoreGain = baseScore * tetrisLevel;
+    if (isDifficult && tetrisBackToBack) {
+      scoreGain = Math.floor(scoreGain * 1.5);
+      label = "B2B " + label;
+    }
+
+    if (lineCount > 0) {
+      tetrisBackToBack = isDifficult;
+      tetrisCombo++;
+      if (tetrisCombo > 0) scoreGain += 50 * tetrisCombo * tetrisLevel;
+    } else {
+      tetrisCombo = -1;
+    }
+
+    tetrisScore += scoreGain;
+    tetrisLinesCleared += lineCount;
+    tetrisLevel = Math.floor(tetrisLinesCleared / 10) + 1;
+    tetrisUpdateScoreDisplay();
+
+    if (lineCount > 0 || tSpinType) {
+      tetrisShowClearEffect(label, lineCount, tSpinType);
+    }
+
+    if (lineCount > 0) {
+      tetrisAnimateLineClear(clearedRows, () => {
+        tetrisRemoveClearedRows(clearedRows);
+        tetrisRenderBoard();
+        tetrisHoldUsed = false;
+        tetrisSpawnNextPiece();
+      });
+    } else {
+      tetrisHoldUsed = false;
+      tetrisSpawnNextPiece();
+    }
+  }
+
+  function tetrisAnimateLineClear(rows, onDone) {
+    rows.forEach(r => {
+      const domRow = r - TETRIS_HIDDEN_ROWS;
+      if (domRow < 0 || domRow >= TETRIS_ROWS) return;
+      for (let c = 0; c < TETRIS_COLS; c++) tetrisCellEls[domRow][c].classList.add("flashing");
+    });
+    setTimeout(onDone, 220);
+  }
+
+  function tetrisRemoveClearedRows(rows) {
+    const rowSet = new Set(rows);
+    const remaining = tetrisBoard.filter((_, r) => !rowSet.has(r));
+    const newRows = rows.map(() => new Array(TETRIS_COLS).fill(null));
+    tetrisBoard = [...newRows, ...remaining];
+  }
+
+  // 지운 칸 수(줄수 x 10)가 많을수록 이펙트 글자 크기/파티클 양이 커진다.
+  function tetrisShowClearEffect(label, lineCount, tSpinType) {
+    const popup = document.getElementById("tetrisClearPopup");
+    const textEl = document.getElementById("tetrisClearText");
+    const flashEl = document.getElementById("tetrisClearFlash");
+
+    const cellsCleared = lineCount * TETRIS_COLS;
+    let scale = lineCount === 0 ? 1 : 1 + (cellsCleared / 40) * 1.8;
+    if (tSpinType) scale += 0.3;
+    scale = Math.min(3.2, scale);
+
+    const comboText = tetrisCombo > 0 ? ` ${tetrisCombo + 1}COMBO!` : "";
+    textEl.textContent = label + comboText;
+    textEl.style.fontSize = `${Math.round(26 + scale * 16)}px`;
+    textEl.style.setProperty("--bang-peak", (1.1 + scale * 0.45).toFixed(2));
+    flashEl.style.setProperty("--flash-scale", Math.round(6 + scale * 6));
+
+    popup.classList.remove("show");
+    void popup.offsetWidth;
+    popup.classList.add("show");
+    spawnLadderConfetti(popup.querySelector(".tetris-clear-inner"), Math.min(2.6, 0.7 + scale * 0.55));
+
+    clearTimeout(tetrisClearPopupTimer);
+    tetrisClearPopupTimer = setTimeout(() => popup.classList.remove("show"), 1300);
+  }
+
+  function tetrisGhostRow() {
+    let r = tetrisCurrent.row;
+    while (tetrisCanPlace(tetrisCurrent.name, tetrisCurrent.rot, r + 1, tetrisCurrent.col)) r++;
+    return r;
+  }
+
+  function tetrisSetCellClass(boardRow, col, className) {
+    const domRow = boardRow - TETRIS_HIDDEN_ROWS;
+    if (domRow < 0 || domRow >= TETRIS_ROWS) return;
+    tetrisCellEls[domRow][col].className = className;
+  }
+
+  function tetrisRenderBoard() {
+    for (let r = TETRIS_HIDDEN_ROWS; r < TETRIS_TOTAL_ROWS; r++) {
+      for (let c = 0; c < TETRIS_COLS; c++) {
+        const filled = tetrisBoard[r][c];
+        tetrisSetCellClass(r, c, filled ? `tetris-cell filled tp-${filled}` : "tetris-cell");
+      }
+    }
+    if (!tetrisCurrent) return;
+
+    const ghostRow = tetrisGhostRow();
+    const shape = TETRIS_SHAPES[tetrisCurrent.name][tetrisCurrent.rot];
+
+    for (let r = 0; r < shape.length; r++) {
+      for (let c = 0; c < shape[r].length; c++) {
+        if (!shape[r][c]) continue;
+        const gr = ghostRow + r, gc = tetrisCurrent.col + c;
+        if (!tetrisBoard[gr] || tetrisBoard[gr][gc]) continue;
+        const domRow = gr - TETRIS_HIDDEN_ROWS;
+        if (domRow < 0 || domRow >= TETRIS_ROWS) continue;
+        tetrisCellEls[domRow][gc].classList.add("ghost");
+      }
+    }
+    for (let r = 0; r < shape.length; r++) {
+      for (let c = 0; c < shape[r].length; c++) {
+        if (!shape[r][c]) continue;
+        const br = tetrisCurrent.row + r, bc = tetrisCurrent.col + c;
+        tetrisSetCellClass(br, bc, `tetris-cell filled tp-${tetrisCurrent.name}`);
+      }
+    }
+  }
+
+  function tetrisRenderBoardSkeleton() {
+    const board = document.getElementById("tetrisBoard");
+    board.innerHTML = "";
+    tetrisCellEls = [];
+    for (let r = 0; r < TETRIS_ROWS; r++) {
+      const rowEls = [];
+      for (let c = 0; c < TETRIS_COLS; c++) {
+        const cell = document.createElement("div");
+        cell.className = "tetris-cell";
+        board.appendChild(cell);
+        rowEls.push(cell);
+      }
+      tetrisCellEls.push(rowEls);
+    }
+  }
+
+  function tetrisBuildMiniGrid(container, name) {
+    container.innerHTML = "";
+    if (!name) return;
+    const shape = TETRIS_SHAPES[name][0];
+    let minR = shape.length, maxR = -1, minC = shape[0].length, maxC = -1;
+    for (let r = 0; r < shape.length; r++) {
+      for (let c = 0; c < shape[r].length; c++) {
+        if (shape[r][c]) {
+          minR = Math.min(minR, r); maxR = Math.max(maxR, r);
+          minC = Math.min(minC, c); maxC = Math.max(maxC, c);
+        }
+      }
+    }
+    const h = maxR - minR + 1, w = maxC - minC + 1;
+    const grid = document.createElement("div");
+    grid.className = "tetris-mini-grid";
+    grid.style.gridTemplateColumns = `repeat(${w}, 1fr)`;
+    grid.style.gridTemplateRows = `repeat(${h}, 1fr)`;
+    grid.style.aspectRatio = `${w} / ${h}`;
+    for (let r = minR; r <= maxR; r++) {
+      for (let c = minC; c <= maxC; c++) {
+        const cell = document.createElement("div");
+        cell.className = "tetris-mini-cell";
+        if (shape[r][c]) cell.classList.add(`tp-${name}`);
+        grid.appendChild(cell);
+      }
+    }
+    container.appendChild(grid);
+  }
+
+  function tetrisRenderHold() {
+    const holdEl = document.getElementById("tetrisHold");
+    holdEl.classList.toggle("dimmed", tetrisHoldUsed);
+    tetrisBuildMiniGrid(holdEl, tetrisHoldPiece);
+  }
+
+  function tetrisRenderNext() {
+    const nextEl = document.getElementById("tetrisNext");
+    nextEl.innerHTML = "";
+    for (let i = 0; i < 3; i++) {
+      const slot = document.createElement("div");
+      slot.className = "tetris-next-slot";
+      tetrisBuildMiniGrid(slot, tetrisNextQueue[i]);
+      nextEl.appendChild(slot);
+    }
+  }
+
+  function tetrisUpdateScoreDisplay() {
+    document.getElementById("tetrisScoreDisplay").textContent = tetrisScore;
+    document.getElementById("tetrisLevelDisplay").textContent = tetrisLevel;
+    document.getElementById("tetrisLinesDisplay").textContent = tetrisLinesCleared;
+  }
+
+  function tetrisUpdateInfo() {
+    tetrisUpdateScoreDisplay();
+    document.getElementById("tetrisBestLabel").textContent = renderTopLabel(tetrisTop, "score", "");
+    document.getElementById("tetrisLeaderboard").innerHTML = renderRankLines(tetrisTop, "score", "");
+  }
+
+  async function refreshTetrisBestFromServer() {
+    const remoteList = normalizeRemoteList(await fetchRemoteRecord("tetris"));
+    const merged = mergeTopLists(tetrisTop, remoteList, "score", false);
+    if (JSON.stringify(merged) === JSON.stringify(tetrisTop)) return;
+    tetrisTop = merged;
+    saveTopList("cosmax_tetris_top3", tetrisTop);
+    tetrisUpdateInfo();
+  }
+
+  async function syncTetrisBestToServer() {
+    const remoteList = normalizeRemoteList(await fetchRemoteRecord("tetris"));
+    const merged = mergeTopLists(remoteList, tetrisTop, "score", false);
+    if (JSON.stringify(merged) !== JSON.stringify(remoteList)) {
+      writeRemoteRecord("tetris", merged);
+    }
+  }
+
+  function tetrisNormalDropIntervalMs() {
+    const framesPerRow = Math.pow(0.8 - ((tetrisLevel - 1) * 0.007), tetrisLevel - 1);
+    return Math.max(33, framesPerRow * (1000 / 60));
+  }
+
+  function tetrisGameLoop() {
+    if (!tetrisRunning) return;
+    const now = performance.now();
+    let dt = now - tetrisLastTickTime;
+    tetrisLastTickTime = now;
+    dt = Math.min(dt, 200);
+
+    if (tetrisCurrent) {
+      const grounded = !tetrisCanPlace(tetrisCurrent.name, tetrisCurrent.rot, tetrisCurrent.row + 1, tetrisCurrent.col);
+      if (grounded) {
+        tetrisLockElapsed += dt;
+        if (tetrisLockElapsed >= TETRIS_LOCK_DELAY_MS || tetrisLockResets >= TETRIS_MAX_LOCK_RESETS) {
+          tetrisLockPiece();
+        } else {
+          tetrisRenderBoard();
+        }
+      } else {
+        tetrisDropAccumulator += dt;
+        const interval = tetrisSoftDropHeld ? Math.min(50, tetrisNormalDropIntervalMs()) : tetrisNormalDropIntervalMs();
+        if (tetrisDropAccumulator >= interval) {
+          tetrisDropAccumulator = 0;
+          const moved = tetrisAttemptShift(1, 0);
+          if (moved) {
+            tetrisLastActionWasRotate = false;
+            if (tetrisSoftDropHeld) { tetrisScore += 1; tetrisUpdateScoreDisplay(); }
+          }
+        }
+        tetrisLockElapsed = 0;
+        tetrisLockResets = 0;
+        tetrisRenderBoard();
+      }
+    }
+
+    if (tetrisRunning) tetrisAnimFrame = setTimeout(tetrisGameLoop, TETRIS_TICK_MS);
+  }
+
+  function tetrisGameOverTrigger() {
+    tetrisGameOver = true;
+    tetrisRunning = false;
+    clearTimeout(tetrisAnimFrame);
+
+    const updated = mergeTopLists(tetrisTop, [{ score: tetrisScore, name: playerName }], "score", false);
+    if (JSON.stringify(updated) !== JSON.stringify(tetrisTop)) {
+      tetrisTop = updated;
+      saveTopList("cosmax_tetris_top3", tetrisTop);
+      syncTetrisBestToServer();
+    }
+    tetrisUpdateInfo();
+
+    playAnimatedBanner(document.getElementById("tetrisResultBanner"), `💥 게임 오버! 점수 ${tetrisScore}`, "lose");
+    document.getElementById("tetrisRetryButton").classList.remove("hidden");
+    document.getElementById("tetrisStartButton").classList.add("hidden");
+
+    const popup = document.getElementById("tetrisGameOverPopup");
+    document.getElementById("tetrisGameOverScore").textContent = `🏆 점수: ${tetrisScore}`;
+    popup.classList.remove("show");
+    void popup.offsetWidth;
+    popup.classList.add("show");
+    setTimeout(() => popup.classList.remove("show"), 1800);
+  }
+
+  function initTetrisState() {
+    tetrisBoard = Array.from({ length: TETRIS_TOTAL_ROWS }, () => new Array(TETRIS_COLS).fill(null));
+    tetrisBag = [];
+    tetrisNextQueue = [];
+    for (let i = 0; i < 4; i++) tetrisNextQueue.push(tetrisBagNext());
+    tetrisCurrent = null;
+    tetrisHoldPiece = null;
+    tetrisHoldUsed = false;
+    tetrisScore = 0;
+    tetrisLevel = 1;
+    tetrisLinesCleared = 0;
+    tetrisCombo = -1;
+    tetrisBackToBack = false;
+    tetrisGameOver = false;
+    tetrisRunning = false;
+    tetrisSoftDropHeld = false;
+    tetrisLastActionWasRotate = false;
+    tetrisLockElapsed = 0;
+    tetrisLockResets = 0;
+    tetrisDropAccumulator = 0;
+    clearTimeout(tetrisAnimFrame);
+
+    tetrisRenderBoardSkeleton();
+    tetrisRenderHold();
+    tetrisRenderNext();
+    tetrisUpdateInfo();
+    document.getElementById("tetrisResultBanner").textContent = "";
+    document.getElementById("tetrisRetryButton").classList.add("hidden");
+    document.getElementById("tetrisStartButton").classList.remove("hidden");
+    refreshTetrisBestFromServer();
+  }
+
+  function startTetrisGame() {
+    if (tetrisRunning) return;
+    tetrisRunning = true;
+    tetrisGameOver = false;
+    document.getElementById("tetrisStartButton").classList.add("hidden");
+    tetrisLastTickTime = performance.now();
+    tetrisSpawnNextPiece();
+    tetrisAnimFrame = setTimeout(tetrisGameLoop, TETRIS_TICK_MS);
+  }
+
+  function restartTetrisGame() {
+    initTetrisState();
+    startTetrisGame();
+  }
+
+  function tetrisAction(action) {
+    if (!tetrisRunning || tetrisGameOver) return;
+    if (action === "left") tetrisMoveHorizontal(-1);
+    else if (action === "right") tetrisMoveHorizontal(1);
+    else if (action === "rotateCW") tetrisRotate(1);
+    else if (action === "rotateCCW") tetrisRotate(-1);
+    else if (action === "hardDrop") tetrisHardDrop();
+    else if (action === "hold") tetrisHold();
+    else if (action === "softDrop") tetrisGravityStepManual();
+  }
+
+  document.addEventListener("keydown", (e) => {
+    if (!tetrisRunning || tetrisGameOver) return;
+    if (e.key === "ArrowLeft") { tetrisMoveHorizontal(-1); e.preventDefault(); }
+    else if (e.key === "ArrowRight") { tetrisMoveHorizontal(1); e.preventDefault(); }
+    else if (e.key === "ArrowDown") { tetrisSoftDropHeld = true; e.preventDefault(); }
+    else if (e.key === "ArrowUp") { tetrisRotate(1); e.preventDefault(); }
+    else if (e.key === "z" || e.key === "Z" || e.key === "Control") { tetrisRotate(-1); e.preventDefault(); }
+    else if (e.key === "a" || e.key === "A") { tetrisRotate(2); e.preventDefault(); }
+    else if (e.key === " ") { tetrisHardDrop(); e.preventDefault(); }
+    else if (e.key === "Shift" || e.key === "c" || e.key === "C") { tetrisHold(); e.preventDefault(); }
+  });
+  document.addEventListener("keyup", (e) => {
+    if (e.key === "ArrowDown") tetrisSoftDropHeld = false;
+  });
 </script>
 </body>
 </html>
