@@ -1813,7 +1813,9 @@
       onkeydown="if(event.key==='Enter') startSnakeVersusGame()">
     <p class="subtitle ms-hint">
       테트리스 대결모드처럼 각자 자기 보드에서 동시에 플레이합니다. 벽이나 자기 몸에
-      부딪히면 탈락! 먼저 죽는 사람이 지고, 오래 살아남는 사람이 이깁니다.
+      부딪히면 탈락! 먼저 죽는 사람이 지고, 오래 살아남는 사람이 이깁니다.<br>
+      이동 속도가 0.5초보다 느릴 때는 15초, 0.5초 이하로 빨라지면 8초 안에 사과를
+      먹어야 살아남습니다.
     </p>
 
     <div class="tetris-keymap-diagram">
@@ -3260,8 +3262,18 @@
   let snakeVsName1 = "1P", snakeVsName2 = "2P";
   let snakeVsTimer = null;
   let snakeVsSpeedTimer = null;
+  let snakeVsHungerTimer = null;
   let snakeVsCurrentInterval = SNAKE_BASE_INTERVAL;
   let snakeVsRunning = false;
+  const SNAKE_VS_HUNGER_SPEED_THRESHOLD = 500;
+  const SNAKE_VS_HUNGER_LIMIT_SLOW = 15000;
+  const SNAKE_VS_HUNGER_LIMIT_FAST = 8000;
+
+  // 이동 속도가 0.5초보다 느릴 때는 15초, 0.5초 이하로 빨라지면 8초 안에
+  // 사과를 먹어야 한다. 1P/2P는 각자 마지막으로 먹은 시점부터 독립적으로 카운트한다.
+  function snakeVsHungerLimit() {
+    return snakeVsCurrentInterval > SNAKE_VS_HUNGER_SPEED_THRESHOLD ? SNAKE_VS_HUNGER_LIMIT_SLOW : SNAKE_VS_HUNGER_LIMIT_FAST;
+  }
 
   function snakeVsCreatePlayerState(name) {
     const startX = Math.floor(SNAKE_COLS / 2);
@@ -3273,7 +3285,8 @@
       pendingDir: { x: 1, y: 0 },
       apple: null,
       alive: true,
-      appleCount: 0
+      appleCount: 0,
+      timeSinceEat: 0
     };
     snakeVsPlaceApple(state);
     return state;
@@ -3371,7 +3384,8 @@
   }
 
   function snakeVsUpdateLabel(state, suffix, emoji) {
-    document.getElementById("snakeVsName" + suffix + "Label").textContent = `${emoji} ${state.name} 🍎${state.appleCount}`;
+    const remainSec = Math.max(0, Math.ceil((snakeVsHungerLimit() - state.timeSinceEat) / 1000));
+    document.getElementById("snakeVsName" + suffix + "Label").textContent = `${emoji} ${state.name} 🍎${state.appleCount} ⏳${remainSec}`;
   }
 
   function snakeVsSetDirection(state, dx, dy) {
@@ -3408,6 +3422,7 @@
     state.body.unshift(newHead);
     if (willEat) {
       state.appleCount++;
+      state.timeSinceEat = 0;
       snakeVsPlaceApple(state);
     } else {
       state.body.pop();
@@ -3430,10 +3445,32 @@
     scheduleSnakeVsTick();
   }
 
+  // 100ms마다 각자 마지막으로 사과를 먹은 뒤 흐른 시간을 재서, 제한시간을
+  // 넘긴 플레이어를 탈락시킨다(상대와 무관하게 각자 독립적으로 판정).
+  function snakeVsHungerTick() {
+    if (!snakeVsRunning) return;
+    const limit = snakeVsHungerLimit();
+    [snakeVs1, snakeVs2].forEach(state => {
+      if (!state.alive) return;
+      state.timeSinceEat += 100;
+      if (state.timeSinceEat >= limit) {
+        state.alive = false;
+      }
+    });
+
+    snakeVsUpdateLabel(snakeVs1, "1", "🟢");
+    snakeVsUpdateLabel(snakeVs2, "2", "🔵");
+
+    if (!snakeVs1.alive || !snakeVs2.alive) {
+      endSnakeVsGame();
+    }
+  }
+
   function endSnakeVsGame() {
     snakeVsRunning = false;
     clearTimeout(snakeVsTimer);
     clearInterval(snakeVsSpeedTimer);
+    clearInterval(snakeVsHungerTimer);
 
     let resultText, bannerClass;
     if (!snakeVs1.alive && !snakeVs2.alive) {
@@ -3454,6 +3491,7 @@
   function initSnakeVsState() {
     clearTimeout(snakeVsTimer);
     clearInterval(snakeVsSpeedTimer);
+    clearInterval(snakeVsHungerTimer);
 
     snakeVs1 = snakeVsCreatePlayerState(snakeVsName1);
     snakeVs2 = snakeVsCreatePlayerState(snakeVsName2);
@@ -3483,6 +3521,8 @@
       if (!snakeVsRunning) return;
       snakeVsCurrentInterval = Math.max(SNAKE_MIN_INTERVAL, snakeVsCurrentInterval - SNAKE_SPEEDUP_STEP);
     }, SNAKE_SPEEDUP_INTERVAL_MS);
+    clearInterval(snakeVsHungerTimer);
+    snakeVsHungerTimer = setInterval(snakeVsHungerTick, 100);
   }
 
   function startSnakeVersusGame() {
