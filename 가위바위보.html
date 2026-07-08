@@ -4855,6 +4855,11 @@
   let tetrisGameOver = false;
   let tetrisRunning = false;
   let tetrisSoftDropHeld = false;
+  let tetrisHorizHeld = 0;
+  let tetrisHorizDasElapsed = 0;
+  let tetrisHorizArrElapsed = 0;
+  const TETRIS_DAS_MS = 170;
+  const TETRIS_ARR_MS = 40;
   let tetrisLastActionWasRotate = false;
   let tetrisAnimFrame = null;
   let tetrisLastTickTime = 0;
@@ -5308,6 +5313,21 @@
     return Math.max(33, secondsPerRow * 1000);
   }
 
+  // 방향키를 누르고 있으면 처음엔 DAS(지연 시간)만큼 기다렸다가, 그 뒤로는 ARR
+  // 간격마다 한 칸씩 계속 밀어서 "꾹 누르면 쭉 이동"하는 느낌을 만든다.
+  function tetrisProcessHorizontalDas(dt) {
+    if (tetrisHorizHeld === 0 || !tetrisCurrent) return;
+    tetrisHorizDasElapsed += dt;
+    if (tetrisHorizDasElapsed < TETRIS_DAS_MS) return;
+    tetrisHorizArrElapsed += dt;
+    while (tetrisHorizArrElapsed >= TETRIS_ARR_MS) {
+      tetrisHorizArrElapsed -= TETRIS_ARR_MS;
+      if (!tetrisAttemptShift(0, tetrisHorizHeld)) { tetrisHorizArrElapsed = 0; break; }
+      tetrisLastActionWasRotate = false;
+      tetrisMaybeResetLockDelay();
+    }
+  }
+
   function tetrisGameLoop() {
     if (!tetrisRunning) return;
     const now = performance.now();
@@ -5316,6 +5336,8 @@
     dt = Math.min(dt, 200);
 
     if (tetrisCurrent) {
+      tetrisProcessHorizontalDas(dt);
+
       const grounded = !tetrisCanPlace(tetrisBoard, tetrisCurrent.name, tetrisCurrent.rot, tetrisCurrent.row + 1, tetrisCurrent.col);
       if (grounded) {
         tetrisLockElapsed += dt;
@@ -5385,6 +5407,9 @@
     tetrisGameOver = false;
     tetrisRunning = false;
     tetrisSoftDropHeld = false;
+    tetrisHorizHeld = 0;
+    tetrisHorizDasElapsed = 0;
+    tetrisHorizArrElapsed = 0;
     tetrisLastActionWasRotate = false;
     tetrisLockElapsed = 0;
     tetrisLockResets = 0;
@@ -5429,8 +5454,24 @@
 
   document.addEventListener("keydown", (e) => {
     if (!tetrisRunning || tetrisGameOver) return;
-    if (e.key === "ArrowLeft") { tetrisMoveHorizontal(-1); e.preventDefault(); }
-    else if (e.key === "ArrowRight") { tetrisMoveHorizontal(1); e.preventDefault(); }
+    if (e.key === "ArrowLeft") {
+      if (!e.repeat && tetrisHorizHeld !== -1) {
+        tetrisHorizHeld = -1;
+        tetrisHorizDasElapsed = 0;
+        tetrisHorizArrElapsed = 0;
+        tetrisMoveHorizontal(-1);
+      }
+      e.preventDefault();
+    }
+    else if (e.key === "ArrowRight") {
+      if (!e.repeat && tetrisHorizHeld !== 1) {
+        tetrisHorizHeld = 1;
+        tetrisHorizDasElapsed = 0;
+        tetrisHorizArrElapsed = 0;
+        tetrisMoveHorizontal(1);
+      }
+      e.preventDefault();
+    }
     else if (e.key === "ArrowDown") { tetrisSoftDropHeld = true; e.preventDefault(); }
     else if (e.key === "ArrowUp") { tetrisRotate(1); e.preventDefault(); }
     else if (e.key === "z" || e.key === "Z" || e.key === "Control") { tetrisRotate(-1); e.preventDefault(); }
@@ -5440,6 +5481,8 @@
   });
   document.addEventListener("keyup", (e) => {
     if (e.key === "ArrowDown") tetrisSoftDropHeld = false;
+    else if (e.key === "ArrowLeft" && tetrisHorizHeld === -1) tetrisHorizHeld = 0;
+    else if (e.key === "ArrowRight" && tetrisHorizHeld === 1) tetrisHorizHeld = 0;
   });
 
   // ---- 테트리스 대결모드 (한 키보드로 2인 동시 플레이, 방해줄 공격) ----
@@ -5484,6 +5527,9 @@
       backToBack: false,
       gameOver: false,
       softDropHeld: false,
+      horizHeld: 0,
+      horizDasElapsed: 0,
+      horizArrElapsed: 0,
       lastActionWasRotate: false,
       dropAccumulator: 0,
       lockElapsed: 0,
@@ -5816,8 +5862,24 @@
     return Math.max(33, secondsPerRow * 1000);
   }
 
+  // 솔로 모드와 동일한 DAS/ARR 로직을 각 플레이어 상태별로 독립 적용한다.
+  function tetrisVsProcessHorizontalDas(state, dt) {
+    if (state.horizHeld === 0 || !state.current) return;
+    state.horizDasElapsed += dt;
+    if (state.horizDasElapsed < TETRIS_DAS_MS) return;
+    state.horizArrElapsed += dt;
+    while (state.horizArrElapsed >= TETRIS_ARR_MS) {
+      state.horizArrElapsed -= TETRIS_ARR_MS;
+      if (!tetrisVsAttemptShift(state, 0, state.horizHeld)) { state.horizArrElapsed = 0; break; }
+      state.lastActionWasRotate = false;
+      tetrisVsMaybeResetLockDelay(state);
+    }
+  }
+
   function tetrisVsProcessStateTick(state, dt) {
     if (!state.current || state.gameOver) return;
+    tetrisVsProcessHorizontalDas(state, dt);
+
     const grounded = !tetrisCanPlace(state.board, state.current.name, state.current.rot, state.current.row + 1, state.current.col);
     if (grounded) {
       state.lockElapsed += dt;
@@ -5913,18 +5975,26 @@
     tetrisVsBeginMatch();
   }
 
+  function tetrisVsBeginHorizontalHold(state, dir, isRepeat) {
+    if (isRepeat || state.horizHeld === dir) return;
+    state.horizHeld = dir;
+    state.horizDasElapsed = 0;
+    state.horizArrElapsed = 0;
+    tetrisVsMoveHorizontal(state, dir);
+  }
+
   document.addEventListener("keydown", (e) => {
     if (!tetrisVsRunning) return;
     const key = e.key;
-    if (key === "a" || key === "A") { tetrisVsMoveHorizontal(tetrisVsP1, -1); e.preventDefault(); }
-    else if (key === "d" || key === "D") { tetrisVsMoveHorizontal(tetrisVsP1, 1); e.preventDefault(); }
+    if (key === "a" || key === "A") { tetrisVsBeginHorizontalHold(tetrisVsP1, -1, e.repeat); e.preventDefault(); }
+    else if (key === "d" || key === "D") { tetrisVsBeginHorizontalHold(tetrisVsP1, 1, e.repeat); e.preventDefault(); }
     else if (key === "s" || key === "S") { tetrisVsP1.softDropHeld = true; e.preventDefault(); }
     else if (key === "w" || key === "W") { tetrisVsRotate(tetrisVsP1, 1); e.preventDefault(); }
     else if (key === "q" || key === "Q") { tetrisVsRotate(tetrisVsP1, -1); e.preventDefault(); }
     else if (e.code === "ShiftLeft") { tetrisVsHardDrop(tetrisVsP1); e.preventDefault(); }
     else if (key === "Tab") { tetrisVsHold(tetrisVsP1); e.preventDefault(); }
-    else if (key === "ArrowLeft") { tetrisVsMoveHorizontal(tetrisVsP2, -1); e.preventDefault(); }
-    else if (key === "ArrowRight") { tetrisVsMoveHorizontal(tetrisVsP2, 1); e.preventDefault(); }
+    else if (key === "ArrowLeft") { tetrisVsBeginHorizontalHold(tetrisVsP2, -1, e.repeat); e.preventDefault(); }
+    else if (key === "ArrowRight") { tetrisVsBeginHorizontalHold(tetrisVsP2, 1, e.repeat); e.preventDefault(); }
     else if (key === "ArrowDown") { tetrisVsP2.softDropHeld = true; e.preventDefault(); }
     else if (key === "ArrowUp") { tetrisVsRotate(tetrisVsP2, 1); e.preventDefault(); }
     else if (key === ".") { tetrisVsRotate(tetrisVsP2, -1); e.preventDefault(); }
@@ -5935,6 +6005,10 @@
     if (!tetrisVsP1 || !tetrisVsP2) return;
     if (e.key === "s" || e.key === "S") tetrisVsP1.softDropHeld = false;
     else if (e.key === "ArrowDown") tetrisVsP2.softDropHeld = false;
+    else if ((e.key === "a" || e.key === "A") && tetrisVsP1.horizHeld === -1) tetrisVsP1.horizHeld = 0;
+    else if ((e.key === "d" || e.key === "D") && tetrisVsP1.horizHeld === 1) tetrisVsP1.horizHeld = 0;
+    else if (e.key === "ArrowLeft" && tetrisVsP2.horizHeld === -1) tetrisVsP2.horizHeld = 0;
+    else if (e.key === "ArrowRight" && tetrisVsP2.horizHeld === 1) tetrisVsP2.horizHeld = 0;
   });
 </script>
 </body>
