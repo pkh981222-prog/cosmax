@@ -966,6 +966,100 @@
     animation: rankNameIn 0.5s ease forwards;
     animation-delay: 0.2s;
   }
+  .omok-board {
+    position: relative;
+    width: 100%;
+    max-width: 420px;
+    margin: 10px auto 14px;
+    aspect-ratio: 1 / 1;
+    border-radius: 10px;
+    background: linear-gradient(135deg, #E3B573 0%, #C9924F 55%, #B07D3E 100%);
+    box-shadow: inset 0 0 0 5px #4A2C1D, 0 6px 14px rgba(0,0,0,0.3);
+    overflow: hidden;
+  }
+  .omok-grid {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    grid-template-columns: repeat(15, 1fr);
+    grid-template-rows: repeat(15, 1fr);
+  }
+  .omok-cell {
+    box-sizing: border-box;
+    border: 1px solid rgba(74,44,23,0.35);
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+  }
+  .omok-cell:hover {
+    background: rgba(255,255,255,0.18);
+  }
+  .omok-forbidden-cell {
+    background: rgba(229,72,77,0.28);
+  }
+  .omok-forbidden-cell::after {
+    content: "✕";
+    color: rgba(178,58,58,0.7);
+    font-size: 12px;
+    font-weight: 800;
+  }
+  .omok-rule-toggle {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    margin: 0 0 16px;
+  }
+  .omok-rule-toggle.hidden {
+    display: none;
+  }
+  .omok-rule-btn {
+    flex: 1 1 auto;
+    max-width: 200px;
+  }
+  .omok-rule-btn.active {
+    background: #6B4226;
+    color: #fff;
+    box-shadow: inset 0 0 0 2px #4A2C1D;
+  }
+  .othello-stone.omok-win-stone {
+    animation: othelloTimerPulse 0.6s ease infinite;
+    box-shadow: 0 0 0 4px #FFD84D, 0 3px 6px rgba(0,0,0,0.45);
+    z-index: 4;
+  }
+  .omok-vs-timers {
+    display: flex;
+    justify-content: center;
+    gap: 14px;
+    margin: 0 auto 12px;
+  }
+  .omok-vs-timers.hidden {
+    display: none;
+  }
+  .omok-clock {
+    padding: 6px 18px;
+    border-radius: 999px;
+    background: #FFFFFF;
+    border: 3px solid #C9B7A6;
+    color: #8A6A50;
+    font-weight: 900;
+    font-size: 20px;
+    font-variant-numeric: tabular-nums;
+    box-shadow: 0 3px 0 rgba(74,44,23,0.15);
+    transition: border-color 0.2s ease, color 0.2s ease;
+  }
+  .omok-clock.active {
+    border-color: #2A6BA8;
+    color: #2A6BA8;
+    box-shadow: 0 3px 0 rgba(42, 107, 168, 0.25);
+  }
+  .omok-clock.low {
+    border-color: #E63232;
+    color: #E63232;
+    box-shadow: 0 3px 0 rgba(230, 50, 50, 0.3);
+    animation: othelloTimerPulse 0.6s infinite;
+  }
   .watermelon-board {
     position: relative;
     width: 100%;
@@ -1724,6 +1818,7 @@
       <button class="retry-button" onclick="chooseGame('roulette')">🎡 룰렛돌리기</button>
       <button class="retry-button" onclick="chooseGame('snake')">🐍 뱀게임</button>
       <button class="retry-button" onclick="chooseGame('othello')">⚫⚪ 오셀로</button>
+      <button class="retry-button" onclick="chooseGame('omok')">🎯 오목</button>
       <button class="retry-button" onclick="chooseGame('watermelon')">🍉 수박게임</button>
       <button class="retry-button" onclick="chooseGame('minesweeper')">💣 지뢰찾기</button>
       <button class="retry-button" onclick="chooseGame('tetris')">🧱 테트리스</button>
@@ -1979,6 +2074,77 @@
 
     <button class="retry-button hidden" id="othelloRetryButton" onclick="restartOthelloGame()">🔄 다시하기</button>
     <button class="home-button" onclick="showIntro()">🏠 처음으로</button>
+  </div>
+
+  <div class="card hidden" id="omokModeScreen">
+    <h1>🎯 오목 게임</h1>
+    <p class="subtitle">어떤 모드로 플레이할까요?</p>
+    <div class="game-select">
+      <button class="retry-button" onclick="showScreen('omokCpuSetupScreen')">🤖 컴퓨터와 대결</button>
+      <button class="retry-button" onclick="showScreen('omokVersusNamesScreen')">⚔️ 1:1 대결 (같은 기기)</button>
+    </div>
+    <button class="home-button" onclick="showIntro()">🏠 처음으로</button>
+  </div>
+
+  <div class="card hidden" id="omokCpuSetupScreen">
+    <h1>🎯 오목 (컴퓨터전)</h1>
+    <p class="subtitle">이름과 난이도를 선택하세요! 당신은 항상 ⚫ 흑으로 먼저 둡니다.</p>
+    <input type="text" class="name-input" id="omokCpuNameInput" placeholder="이름을 입력하세요" maxlength="10">
+    <div class="omok-rule-toggle" id="omokCpuRuleToggle">
+      <button type="button" class="home-button omok-rule-btn active" data-rule="standard" onclick="omokSelectRule(this)">📏 일반룰</button>
+      <button type="button" class="home-button omok-rule-btn" data-rule="free" onclick="omokSelectRule(this)">🆓 자유룰</button>
+    </div>
+    <div class="game-select">
+      <button class="retry-button" onclick="startOmokCpuGame('easy')">🟢 쉬움</button>
+      <button class="retry-button" onclick="startOmokCpuGame('medium')">🟡 중간</button>
+      <button class="retry-button" onclick="startOmokCpuGame('hard')">🟠 어려움</button>
+      <button class="retry-button" onclick="startOmokCpuGame('veryhard')">🔴 매우어려움</button>
+    </div>
+    <button class="home-button" onclick="showScreen('omokModeScreen')">🔙 뒤로</button>
+  </div>
+
+  <div class="card hidden" id="omokVersusNamesScreen">
+    <h1>⚔️ 오목 대결모드</h1>
+    <p class="subtitle">두 사람의 이름을 알려주세요! 각자 총 10분의 제한시간이 주어집니다.</p>
+    <input type="text" class="name-input" id="omokBlackNameInput" placeholder="⚫ 흑 플레이어 이름" maxlength="10"
+      onkeydown="if(event.key==='Enter') document.getElementById('omokWhiteNameInput').focus()">
+    <input type="text" class="name-input" id="omokWhiteNameInput" placeholder="⚪ 백 플레이어 이름" maxlength="10"
+      onkeydown="if(event.key==='Enter') startOmokVersusGame()">
+    <div class="omok-rule-toggle" id="omokVsRuleToggle">
+      <button type="button" class="home-button omok-rule-btn active" data-rule="standard" onclick="omokSelectRule(this)">📏 일반룰</button>
+      <button type="button" class="home-button omok-rule-btn" data-rule="free" onclick="omokSelectRule(this)">🆓 자유룰</button>
+    </div>
+    <button class="retry-button" onclick="startOmokVersusGame()">🚀 대결 시작!</button>
+    <button class="home-button" onclick="showScreen('omokModeScreen')">🔙 뒤로</button>
+  </div>
+
+  <div class="card hidden" id="omokScreen">
+    <h1>🎯 오목 게임</h1>
+    <p class="subtitle othello-vs-line" id="omokVsLine"></p>
+    <p class="subtitle" id="omokRuleLine"></p>
+    <p class="subtitle" id="omokSubtitle">⚫ 흑 차례입니다!</p>
+
+    <div class="omok-vs-timers hidden" id="omokVsTimers">
+      <span class="omok-clock" id="omokBlackClock">⚫ 10:00</span>
+      <span class="omok-clock" id="omokWhiteClock">⚪ 10:00</span>
+    </div>
+
+    <div class="scoreboard" id="omokScoreboard">
+      <span id="omokBestLabel">🏆 최고 -</span>
+    </div>
+
+    <div class="omok-board" id="omokBoard">
+      <div class="omok-grid" id="omokGrid"></div>
+    </div>
+
+    <div class="result-box">
+      <div class="result-banner" id="omokResultBanner"></div>
+    </div>
+
+    <div class="leaderboard" id="omokLeaderboard"></div>
+
+    <button class="retry-button hidden" id="omokRetryButton" onclick="restartOmokGame()">🔄 다시하기</button>
+    <button class="home-button" onclick="omokGoHome()">🏠 처음으로</button>
   </div>
 
   <div class="card hidden" id="watermelonScreen">
@@ -2259,6 +2425,13 @@
     </div>
   </div>
 
+  <div class="othello-gameover-popup" id="omokGameOverPopup">
+    <div class="othello-gameover-inner">
+      <div class="othello-gameover-title" id="omokGameOverTitle"></div>
+      <div class="othello-gameover-score" id="omokGameOverScore"></div>
+    </div>
+  </div>
+
   <div class="watermelon-gameover-popup" id="watermelonGameOverPopup">
     <div class="watermelon-gameover-inner">
       <div class="watermelon-gameover-title">게임 오버!!</div>
@@ -2273,7 +2446,8 @@
     "rouletteSetupScreen", "rouletteScreen", "snakeModeScreen", "snakeScreen",
     "snakeVersusNamesScreen", "snakeVersusScreen", "othelloNamesScreen", "othelloScreen", "watermelonScreen",
     "minesweeperSetupScreen", "minesweeperScreen", "tetrisModeScreen", "tetrisScreen",
-    "tetrisVersusNamesScreen", "tetrisVersusScreen"
+    "tetrisVersusNamesScreen", "tetrisVersusScreen",
+    "omokModeScreen", "omokCpuSetupScreen", "omokVersusNamesScreen", "omokScreen"
   ];
   let playerName = "플레이어";
   let selectedGame = "rps";
@@ -2420,6 +2594,9 @@
     } else if (game === "othello") {
       // 오셀로는 대결 게임이라 흑/백 두 사람의 이름을 각각 받는다.
       showScreen("othelloNamesScreen");
+    } else if (game === "omok") {
+      // 오목은 컴퓨터전/대결전 모드를 먼저 고르게 한다.
+      showScreen("omokModeScreen");
     } else if (game === "tetris") {
       showScreen("tetrisModeScreen");
     } else if (game === "snake") {
@@ -3947,6 +4124,518 @@
 
   function restartOthelloGame() {
     initOthelloState();
+  }
+
+  // ---- 오목 ----
+  const OMOK_SIZE = 15;
+  const OMOK_DIRS = [[0, 1], [1, 0], [1, 1], [1, -1]];
+  const OMOK_VS_TIME_SEC = 600; // 대결모드는 1인당 총 10분
+  const OMOK_DIFFICULTY_LABEL = { easy: "쉬움", medium: "중간", hard: "어려움", veryhard: "매우어려움" };
+
+  let omokBoard = [];
+  let omokMode = "cpu"; // "cpu" | "pvp"
+  let omokDifficulty = "medium";
+  let omokRuleMode = "standard"; // "standard"(일반룰, 흑 금수 적용) | "free"(자유룰)
+  let omokTurn = "black";
+  let omokBusy = false;
+  let omokGameOver = false;
+  let omokMoveCount = 0;
+  let omokLastMove = null;
+  let omokBlackName = "흑";
+  let omokWhiteName = "백";
+  let omokTop = loadTopList("cosmax_omok_top3");
+  let omokBlackTimeLeft = OMOK_VS_TIME_SEC;
+  let omokWhiteTimeLeft = OMOK_VS_TIME_SEC;
+  let omokVsTimerHandle = null;
+  let omokForbiddenMsgTimer = null;
+
+  function omokSelectRule(btn) {
+    const group = btn.closest(".omok-rule-toggle");
+    group.querySelectorAll(".omok-rule-btn").forEach(b => b.classList.remove("active"));
+    btn.classList.add("active");
+  }
+
+  function startOmokCpuGame(difficulty) {
+    const nameInput = document.getElementById("omokCpuNameInput").value.trim();
+    omokMode = "cpu";
+    omokDifficulty = difficulty;
+    omokRuleMode = document.querySelector("#omokCpuRuleToggle .omok-rule-btn.active").dataset.rule;
+    omokBlackName = nameInput || "플레이어";
+    omokWhiteName = "컴퓨터";
+    initOmokState();
+    showScreen("omokScreen");
+  }
+
+  function startOmokVersusGame() {
+    const blackInput = document.getElementById("omokBlackNameInput").value.trim();
+    const whiteInput = document.getElementById("omokWhiteNameInput").value.trim();
+    omokMode = "pvp";
+    omokRuleMode = document.querySelector("#omokVsRuleToggle .omok-rule-btn.active").dataset.rule;
+    omokBlackName = blackInput || "흑";
+    omokWhiteName = whiteInput || "백";
+    initOmokState();
+    showScreen("omokScreen");
+  }
+
+  function initOmokState() {
+    omokBoard = Array.from({ length: OMOK_SIZE }, () => new Array(OMOK_SIZE).fill(null));
+    omokTurn = "black";
+    omokBusy = false;
+    omokGameOver = false;
+    omokMoveCount = 0;
+    omokLastMove = null;
+    omokBlackTimeLeft = OMOK_VS_TIME_SEC;
+    omokWhiteTimeLeft = OMOK_VS_TIME_SEC;
+    clearOmokVsTimer();
+    clearTimeout(omokForbiddenMsgTimer);
+
+    document.getElementById("omokResultBanner").textContent = "";
+    document.getElementById("omokSubtitle").classList.remove("lose");
+    document.getElementById("omokRetryButton").classList.add("hidden");
+    document.getElementById("omokVsLine").innerHTML = omokMode === "cpu"
+      ? `⚫ <strong>${escapeHtml(omokBlackName)}</strong> &nbsp;VS&nbsp; 🤖 <strong>컴퓨터(${OMOK_DIFFICULTY_LABEL[omokDifficulty]})</strong>`
+      : `⚫ <strong>${escapeHtml(omokBlackName)}</strong> &nbsp;VS&nbsp; ⚪ <strong>${escapeHtml(omokWhiteName)}</strong>`;
+    document.getElementById("omokRuleLine").textContent = omokRuleMode === "standard"
+      ? "📏 일반룰 (흑의 삼삼·사사·장목 금지)"
+      : "🆓 자유룰 (제한 없음)";
+    document.getElementById("omokVsTimers").classList.toggle("hidden", omokMode !== "pvp");
+
+    renderOmokBoard();
+    updateOmokSubtitle();
+    updateOmokScoreboard();
+    if (omokMode === "pvp") startOmokVsTimer();
+    refreshOmokBestFromServer();
+  }
+
+  function omokGoHome() {
+    clearOmokVsTimer();
+    showIntro();
+  }
+
+  function omokOpponentColor(color) {
+    return color === "black" ? "white" : "black";
+  }
+
+  function omokInBounds(r, c) {
+    return r >= 0 && r < OMOK_SIZE && c >= 0 && c < OMOK_SIZE;
+  }
+
+  function renderOmokBoard() {
+    const grid = document.getElementById("omokGrid");
+    grid.innerHTML = "";
+    const markForbidden = omokRuleMode === "standard" && omokTurn === "black" && !omokGameOver;
+    for (let r = 0; r < OMOK_SIZE; r++) {
+      for (let c = 0; c < OMOK_SIZE; c++) {
+        const cell = document.createElement("div");
+        cell.className = "omok-cell";
+        cell.id = `omokCell-${r}-${c}`;
+        const stoneColor = omokBoard[r][c];
+        if (stoneColor) {
+          const stone = document.createElement("div");
+          const isLast = omokLastMove && omokLastMove.r === r && omokLastMove.c === c;
+          stone.className = `othello-stone ${stoneColor}` + (isLast ? " dropping" : "");
+          cell.appendChild(stone);
+        } else if (markForbidden && omokIsForbiddenForBlack(omokBoard, r, c)) {
+          cell.classList.add("omok-forbidden-cell");
+        }
+        cell.onclick = () => handleOmokCellClick(r, c);
+        grid.appendChild(cell);
+      }
+    }
+  }
+
+  // 표준 오목(렌주식) 규칙의 흑 금수 판정을 실전에 쓸 만한 수준으로 단순화해 구현한다.
+  // 열린 3이 2개 이상=삼삼, 4가 2개 이상=사사, 6목 이상=장목은 흑에게만 금지되고,
+  // 정확히 5를 완성하는 수는 다른 패턴과 상관없이 항상 허용한다.
+  function omokIsForbiddenForBlack(board, r, c) {
+    let hasFive = false, hasOverline = false, fourCount = 0, openThreeCount = 0;
+    for (const [dr, dc] of OMOK_DIRS) {
+      const { count, openEnds } = omokCountLine(board, r, c, dr, dc, "black");
+      if (count === 5) hasFive = true;
+      else if (count >= 6) hasOverline = true;
+      else if (count === 4) fourCount++;
+      else if (count === 3 && openEnds === 2) openThreeCount++;
+    }
+    if (hasFive) return false;
+    if (hasOverline) return true;
+    if (fourCount >= 2) return true;
+    if (openThreeCount >= 2) return true;
+    return false;
+  }
+
+  function omokShowForbiddenMessage() {
+    const el = document.getElementById("omokSubtitle");
+    el.textContent = "⛔ 금수! 그 자리엔 둘 수 없어요 (삼삼·사사·장목)";
+    el.classList.add("lose");
+    clearTimeout(omokForbiddenMsgTimer);
+    omokForbiddenMsgTimer = setTimeout(() => {
+      el.classList.remove("lose");
+      updateOmokSubtitle();
+    }, 1200);
+  }
+
+  function updateOmokSubtitle() {
+    if (omokGameOver) return;
+    if (omokMode === "cpu" && omokTurn === "white") {
+      document.getElementById("omokSubtitle").textContent = "🤖 컴퓨터가 생각 중...";
+      return;
+    }
+    const turnLabel = omokTurn === "black" ? `⚫ ${omokBlackName}` : `⚪ ${omokWhiteName}`;
+    document.getElementById("omokSubtitle").textContent = `${turnLabel} 차례입니다!`;
+  }
+
+  function updateOmokScoreboard() {
+    document.getElementById("omokBestLabel").textContent = renderTopLabel(omokTop, "score", "수");
+    document.getElementById("omokLeaderboard").innerHTML = renderRankLines(omokTop, "score", "수");
+  }
+
+  // 오목은 "누가 몇 수 만에 이겼는지"를 기록으로 삼는다(작을수록 좋은 기록).
+  async function refreshOmokBestFromServer() {
+    const remoteList = normalizeRemoteList(await fetchRemoteRecord("omok"));
+    const merged = mergeTopLists(omokTop, remoteList, "score", true);
+    if (JSON.stringify(merged) === JSON.stringify(omokTop)) return;
+    omokTop = merged;
+    saveTopList("cosmax_omok_top3", omokTop);
+    updateOmokScoreboard();
+  }
+
+  async function syncOmokBestToServer() {
+    const remoteList = normalizeRemoteList(await fetchRemoteRecord("omok"));
+    const merged = mergeTopLists(remoteList, omokTop, "score", true);
+    if (JSON.stringify(merged) !== JSON.stringify(remoteList)) {
+      writeRemoteRecord("omok", merged);
+    }
+  }
+
+  // (r,c)에 color를 놓았다고 가정하고 한 방향(dr,dc)으로 이어지는 연속 개수와,
+  // 그 줄 양 끝이 비어있는(=더 이어질 수 있는) 개수를 함께 구한다.
+  function omokCountLine(board, r, c, dr, dc, color) {
+    let count = 1;
+    let openEnds = 0;
+    let rr = r + dr, cc = c + dc;
+    while (omokInBounds(rr, cc) && board[rr][cc] === color) { count++; rr += dr; cc += dc; }
+    if (omokInBounds(rr, cc) && board[rr][cc] === null) openEnds++;
+    rr = r - dr; cc = c - dc;
+    while (omokInBounds(rr, cc) && board[rr][cc] === color) { count++; rr -= dr; cc -= dc; }
+    if (omokInBounds(rr, cc) && board[rr][cc] === null) openEnds++;
+    return { count, openEnds };
+  }
+
+  // 열린 4(양끝 다 열림)는 막을 수 없는 승리 확정 패턴이라 열린 3과 함께 높은 점수를 준다.
+  function omokPatternScore(count, openEnds) {
+    if (count >= 5) return 100000;
+    if (count === 4) return openEnds === 2 ? 10000 : (openEnds === 1 ? 1000 : 0);
+    if (count === 3) return openEnds === 2 ? 1000 : (openEnds === 1 ? 100 : 0);
+    if (count === 2) return openEnds === 2 ? 100 : (openEnds === 1 ? 10 : 0);
+    return openEnds === 2 ? 10 : 0;
+  }
+
+  function omokEvaluatePoint(board, r, c, color) {
+    let total = 0;
+    for (const [dr, dc] of OMOK_DIRS) {
+      const { count, openEnds } = omokCountLine(board, r, c, dr, dc, color);
+      total += omokPatternScore(count, openEnds);
+    }
+    return total;
+  }
+
+  function omokPlacementWins(board, r, c, color) {
+    for (const [dr, dc] of OMOK_DIRS) {
+      if (omokCountLine(board, r, c, dr, dc, color).count >= 5) return true;
+    }
+    return false;
+  }
+
+  // 탐색 범위를 줄이기 위해, 이미 놓인 돌 주변(체비셰프 거리 2 이내)의 빈 칸만 후보로 삼는다.
+  function omokGenerateCandidates(board) {
+    const seen = new Set();
+    let hasStone = false;
+    for (let r = 0; r < OMOK_SIZE; r++) {
+      for (let c = 0; c < OMOK_SIZE; c++) {
+        if (!board[r][c]) continue;
+        hasStone = true;
+        for (let dr = -2; dr <= 2; dr++) {
+          for (let dc = -2; dc <= 2; dc++) {
+            const rr = r + dr, cc = c + dc;
+            if (omokInBounds(rr, cc) && !board[rr][cc]) seen.add(rr * OMOK_SIZE + cc);
+          }
+        }
+      }
+    }
+    if (!hasStone) return [[7, 7]];
+    return [...seen].map(v => [Math.floor(v / OMOK_SIZE), v % OMOK_SIZE]);
+  }
+
+  function omokRankCandidates(board, color, limit) {
+    const opponent = omokOpponentColor(color);
+    const candidates = omokGenerateCandidates(board);
+    const ranked = candidates.map(([r, c]) => ({
+      r, c,
+      score: omokEvaluatePoint(board, r, c, color) + omokEvaluatePoint(board, r, c, opponent) * 0.9
+    }));
+    ranked.sort((a, b) => b.score - a.score);
+    return ranked.slice(0, limit);
+  }
+
+  function omokFindForcingMove(board, color) {
+    const candidates = omokGenerateCandidates(board);
+    for (const [r, c] of candidates) {
+      if (omokPlacementWins(board, r, c, color)) return [r, c];
+    }
+    return null;
+  }
+
+  function omokEasyMove(board) {
+    const candidates = omokGenerateCandidates(board);
+    return candidates[Math.floor(Math.random() * candidates.length)];
+  }
+
+  function omokGreedyMove(board, color) {
+    const ranked = omokRankCandidates(board, color, 20);
+    const poolSize = Math.min(3, ranked.length);
+    const pick = ranked[Math.floor(Math.random() * poolSize)];
+    return [pick.r, pick.c];
+  }
+
+  // 미니맥스 리프 평가용 전체 보드 점수. 같은 줄을 중복 계산하지 않도록 그 방향으로
+  // 바로 앞 칸이 같은 색이면(=줄의 시작점이 아니면) 건너뛴다.
+  function omokEvaluateBoard(board, forColor) {
+    const opponent = omokOpponentColor(forColor);
+    let score = 0;
+    for (let r = 0; r < OMOK_SIZE; r++) {
+      for (let c = 0; c < OMOK_SIZE; c++) {
+        const color = board[r][c];
+        if (!color) continue;
+        for (const [dr, dc] of OMOK_DIRS) {
+          const pr = r - dr, pc = c - dc;
+          if (omokInBounds(pr, pc) && board[pr][pc] === color) continue;
+          const { count, openEnds } = omokCountLine(board, r, c, dr, dc, color);
+          const s = omokPatternScore(count, openEnds);
+          score += color === forColor ? s : -s;
+        }
+      }
+    }
+    return score;
+  }
+
+  function omokMinimax(board, depth, alpha, beta, colorToMove, aiColor, candidateLimit) {
+    if (depth === 0) return omokEvaluateBoard(board, aiColor);
+    const candidates = omokRankCandidates(board, colorToMove, candidateLimit);
+    if (candidates.length === 0) return omokEvaluateBoard(board, aiColor);
+
+    const maximizing = colorToMove === aiColor;
+    let best = maximizing ? -Infinity : Infinity;
+    for (const { r, c } of candidates) {
+      board[r][c] = colorToMove;
+      const val = omokPlacementWins(board, r, c, colorToMove)
+        ? (maximizing ? 100000 : -100000)
+        : omokMinimax(board, depth - 1, alpha, beta, omokOpponentColor(colorToMove), aiColor, candidateLimit);
+      board[r][c] = null;
+      if (maximizing) {
+        if (val > best) best = val;
+        alpha = Math.max(alpha, best);
+      } else {
+        if (val < best) best = val;
+        beta = Math.min(beta, best);
+      }
+      if (beta <= alpha) break;
+    }
+    return best;
+  }
+
+  function omokBestMoveBySearch(board, aiColor, depth, candidateLimit) {
+    const candidates = omokRankCandidates(board, aiColor, candidateLimit);
+    if (candidates.length === 0) return omokEasyMove(board);
+    let bestScore = -Infinity;
+    let bestMove = [candidates[0].r, candidates[0].c];
+    let alpha = -Infinity;
+    const beta = Infinity;
+    for (const { r, c } of candidates) {
+      board[r][c] = aiColor;
+      const val = omokPlacementWins(board, r, c, aiColor)
+        ? 100000
+        : omokMinimax(board, depth - 1, alpha, beta, omokOpponentColor(aiColor), aiColor, candidateLimit);
+      board[r][c] = null;
+      if (val > bestScore) { bestScore = val; bestMove = [r, c]; }
+      alpha = Math.max(alpha, bestScore);
+    }
+    return bestMove;
+  }
+
+  // 난이도별 실력 차이: 쉬움은 근처 빈칸 중 무작위(승리/방어도 자주 놓침),
+  // 중간은 즉시 승리·방어를 최우선하고 그 외엔 한 수만 보는 탐욕적 선택,
+  // 어려움/매우어려움은 미니맥스로 각각 2수/3수 앞을 내다본다.
+  function omokComputerMove() {
+    const color = "white";
+    const opponent = "black";
+    const board = omokBoard;
+    const winMove = omokFindForcingMove(board, color);
+    const blockMove = omokFindForcingMove(board, opponent);
+    let move;
+
+    if (omokDifficulty === "easy") {
+      if (winMove && Math.random() < 0.7) move = winMove;
+      else if (blockMove && Math.random() < 0.3) move = blockMove;
+      else move = omokEasyMove(board);
+    } else if (omokDifficulty === "medium") {
+      move = winMove || blockMove || omokGreedyMove(board, color);
+    } else if (omokDifficulty === "hard") {
+      move = winMove || blockMove || omokBestMoveBySearch(board, color, 2, 10);
+    } else {
+      move = winMove || blockMove || omokBestMoveBySearch(board, color, 3, 8);
+    }
+
+    omokPlaceStone(move[0], move[1], color);
+  }
+
+  function handleOmokCellClick(r, c) {
+    if (omokBusy || omokGameOver) return;
+    if (omokMode === "cpu" && omokTurn !== "black") return;
+    if (omokBoard[r][c]) return;
+    if (omokRuleMode === "standard" && omokTurn === "black" && omokIsForbiddenForBlack(omokBoard, r, c)) {
+      omokShowForbiddenMessage();
+      return;
+    }
+    omokPlaceStone(r, c, omokTurn);
+  }
+
+  function omokPlaceStone(r, c, color) {
+    omokBoard[r][c] = color;
+    omokMoveCount++;
+    omokLastMove = { r, c };
+
+    if (omokPlacementWins(omokBoard, r, c, color)) {
+      renderOmokBoard();
+      endOmokGame(color, omokCollectWinLine(omokBoard, r, c, color), {});
+      return;
+    }
+    if (omokMoveCount >= OMOK_SIZE * OMOK_SIZE) {
+      renderOmokBoard();
+      endOmokGame(null, null, { draw: true });
+      return;
+    }
+    advanceOmokTurn();
+  }
+
+  function omokCollectWinLine(board, r, c, color) {
+    for (const [dr, dc] of OMOK_DIRS) {
+      const line = [[r, c]];
+      let rr = r + dr, cc = c + dc;
+      while (omokInBounds(rr, cc) && board[rr][cc] === color) { line.push([rr, cc]); rr += dr; cc += dc; }
+      rr = r - dr; cc = c - dc;
+      while (omokInBounds(rr, cc) && board[rr][cc] === color) { line.unshift([rr, cc]); rr -= dr; cc -= dc; }
+      if (line.length >= 5) return line;
+    }
+    return [];
+  }
+
+  function advanceOmokTurn() {
+    omokTurn = omokOpponentColor(omokTurn);
+    renderOmokBoard();
+    updateOmokSubtitle();
+    if (omokMode === "cpu" && omokTurn === "white") {
+      omokBusy = true;
+      setTimeout(omokComputerMove, 450);
+    } else {
+      omokBusy = false;
+    }
+  }
+
+  function omokFormatClock(sec) {
+    const s = Math.max(0, Math.ceil(sec));
+    const m = Math.floor(s / 60);
+    const rem = s % 60;
+    return `${m}:${rem.toString().padStart(2, "0")}`;
+  }
+
+  function updateOmokClocks() {
+    const blackEl = document.getElementById("omokBlackClock");
+    const whiteEl = document.getElementById("omokWhiteClock");
+    blackEl.textContent = `⚫ ${omokFormatClock(omokBlackTimeLeft)}`;
+    whiteEl.textContent = `⚪ ${omokFormatClock(omokWhiteTimeLeft)}`;
+    blackEl.classList.toggle("active", omokTurn === "black" && !omokGameOver);
+    whiteEl.classList.toggle("active", omokTurn === "white" && !omokGameOver);
+    blackEl.classList.toggle("low", omokBlackTimeLeft <= 30);
+    whiteEl.classList.toggle("low", omokWhiteTimeLeft <= 30);
+  }
+
+  function clearOmokVsTimer() {
+    clearInterval(omokVsTimerHandle);
+    omokVsTimerHandle = null;
+  }
+
+  // 대결모드는 매 수마다 리셋되는 오셀로식 타이머 대신, 체스시계처럼 각자 총 10분을 나눠 쓰고
+  // 자기 차례일 때만 줄어든다. 다 쓰면 그 사람이 바로 진다.
+  function startOmokVsTimer() {
+    clearOmokVsTimer();
+    updateOmokClocks();
+    omokVsTimerHandle = setInterval(() => {
+      if (omokGameOver) { clearOmokVsTimer(); return; }
+      if (omokTurn === "black") omokBlackTimeLeft--;
+      else omokWhiteTimeLeft--;
+      updateOmokClocks();
+      if (omokBlackTimeLeft <= 0) {
+        clearOmokVsTimer();
+        endOmokGame("white", null, { timeout: true });
+      } else if (omokWhiteTimeLeft <= 0) {
+        clearOmokVsTimer();
+        endOmokGame("black", null, { timeout: true });
+      }
+    }, 1000);
+  }
+
+  function endOmokGame(winnerColor, winLine, opts) {
+    omokGameOver = true;
+    omokBusy = true;
+    clearOmokVsTimer();
+
+    if (winLine && winLine.length) {
+      winLine.forEach(([r, c]) => {
+        const stone = document.querySelector(`#omokCell-${r}-${c} .othello-stone`);
+        if (stone) stone.classList.add("omok-win-stone");
+      });
+    }
+
+    let resultText, bannerClass, titleText;
+    if (opts.draw) {
+      resultText = "🤝 무승부! 보드가 가득 찼습니다.";
+      titleText = "🤝 무승부!";
+      bannerClass = "draw";
+    } else {
+      const winnerName = winnerColor === "black" ? omokBlackName : omokWhiteName;
+      const winnerEmoji = winnerColor === "black" ? "⚫" : "⚪";
+      const timeoutSuffix = opts.timeout ? " (시간 초과)" : "";
+      resultText = `🎉 ${winnerEmoji} ${winnerName} 승리!${timeoutSuffix}`;
+      titleText = `${winnerEmoji} ${winnerName} 승리!`;
+      bannerClass = "win";
+
+      // 실력을 겨루는 기록이므로 사람 대 사람 대결에서 이겼을 때만 "최소 수 승리" 랭킹에 남긴다.
+      if (omokMode === "pvp") {
+        const updated = mergeTopLists(omokTop, [{ score: omokMoveCount, name: winnerName }], "score", true);
+        if (JSON.stringify(updated) !== JSON.stringify(omokTop)) {
+          omokTop = updated;
+          saveTopList("cosmax_omok_top3", omokTop);
+          syncOmokBestToServer();
+        }
+      }
+    }
+    updateOmokScoreboard();
+
+    document.getElementById("omokSubtitle").textContent = "게임 종료!";
+    playAnimatedBanner(document.getElementById("omokResultBanner"), resultText, bannerClass);
+    document.getElementById("omokRetryButton").classList.remove("hidden");
+
+    const popup = document.getElementById("omokGameOverPopup");
+    document.getElementById("omokGameOverTitle").textContent = titleText;
+    document.getElementById("omokGameOverScore").textContent = opts.draw ? "" : `${omokMoveCount}수 만에 종료`;
+    popup.classList.remove("show");
+    void popup.offsetWidth;
+    popup.classList.add("show");
+    setTimeout(() => popup.classList.remove("show"), 1800);
+  }
+
+  function restartOmokGame() {
+    initOmokState();
   }
 
   // ---- 수박 게임 ----
