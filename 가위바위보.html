@@ -1235,6 +1235,29 @@
   .othello-vs-line strong {
     font-weight: 900;
   }
+  .othello-timer {
+    display: inline-block;
+    margin: 0 auto 12px;
+    padding: 6px 22px;
+    border-radius: 999px;
+    background: #FFFFFF;
+    border: 3px solid #5AA5D8;
+    color: #2A6BA8;
+    font-weight: 900;
+    font-size: 26px;
+    font-variant-numeric: tabular-nums;
+    box-shadow: 0 3px 0 rgba(42, 107, 168, 0.25);
+  }
+  .othello-timer.low {
+    border-color: #E63232;
+    color: #E63232;
+    box-shadow: 0 3px 0 rgba(230, 50, 50, 0.3);
+    animation: othelloTimerPulse 0.6s infinite;
+  }
+  @keyframes othelloTimerPulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.12); }
+  }
   .ms-hint {
     margin-top: 10px;
   }
@@ -1925,6 +1948,7 @@
     <h1>⚫⚪ 오셀로 게임</h1>
     <p class="subtitle othello-vs-line" id="othelloVsLine"></p>
     <p class="subtitle" id="othelloSubtitle">⚫ 흑 차례입니다!</p>
+    <div class="othello-timer" id="othelloTimerDisplay">⏱ 15</div>
 
     <div class="scoreboard" id="othelloScoreboard">
       <span>⚫ 흑 2</span><span>⚪ 백 2</span>
@@ -2271,10 +2295,21 @@
   }
   // 두 목록을 합쳐 값 기준으로 정렬한 뒤 상위 3개만 남긴다.
   // ascending=false면 점수처럼 클수록 좋은 것, true면 시간처럼 작을수록 좋은 것이다.
+  // local 캐시와 서버에서 새로 받아온 목록에는 같은 기록(동일 점수+이름)이 겹쳐 들어있는
+  // 경우가 매우 흔한데, 중복 제거를 안 하면 그 기록이 두 칸을 차지해버려서 원래 2등/3등으로
+  // 밀려나야 할 진짜 다음 기록이 사라지고 순위가 꼬여 보인다. 그래서 반드시 먼저 중복을
+  // 제거한 뒤 정렬해야 한다.
   function mergeTopLists(listA, listB, valueKey, ascending) {
     const combined = [...listA, ...listB].filter(e => e && Number.isFinite(e[valueKey]));
-    combined.sort((a, b) => ascending ? (a[valueKey] - b[valueKey]) : (b[valueKey] - a[valueKey]));
-    return combined.slice(0, 3);
+    const seen = new Set();
+    const deduped = combined.filter(e => {
+      const key = `${e[valueKey]}|${e.name || ""}`;
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+    deduped.sort((a, b) => ascending ? (a[valueKey] - b[valueKey]) : (b[valueKey] - a[valueKey]));
+    return deduped.slice(0, 3);
   }
   // 다른 사람이 입력한 이름이 innerHTML로 그대로 삽입되는 곳(리더보드 등)이 있으므로,
   // 공유 서버에서 받아온 이름에 악성 태그가 들어있어도 그냥 글자로만 보이게 이스케이프한다.
@@ -3741,7 +3776,21 @@
   function updateOthelloTurnSubtitle() {
     const turnLabel = othelloTurn === "black" ? `⚫ ${othelloBlackName}` : `⚪ ${othelloWhiteName}`;
     // textContent를 쓰므로 이름에 특수문자가 있어도 안전하게 그대로 글자로만 표시된다.
-    document.getElementById("othelloSubtitle").textContent = `${turnLabel} 차례입니다! (⏱ ${othelloTimeLeft}초)`;
+    document.getElementById("othelloSubtitle").textContent = `${turnLabel} 차례입니다!`;
+    updateOthelloTimerDisplay();
+  }
+
+  // 부제목 글자 속 작은 숫자로는 잘 안 보인다는 피드백이 있어, 남은 시간을 큼직한
+  // 배지로 따로 떼어내 보여주고 5초 이하로 줄어들면 빨갛게 커지며 깜빡이게 한다.
+  function updateOthelloTimerDisplay() {
+    const el = document.getElementById("othelloTimerDisplay");
+    if (othelloGameOver) {
+      el.classList.add("hidden");
+      return;
+    }
+    el.classList.remove("hidden");
+    el.textContent = `⏱ ${othelloTimeLeft}`;
+    el.classList.toggle("low", othelloTimeLeft <= 5);
   }
 
   function handleOthelloCellClick(r, c) {
@@ -3810,6 +3859,7 @@
       const stayLabel = othelloTurn === "black" ? `⚫ ${othelloBlackName}` : `⚪ ${othelloWhiteName}`;
       renderOthelloBoard();
       clearOthelloTurnTimer();
+      document.getElementById("othelloTimerDisplay").classList.add("hidden");
       document.getElementById("othelloSubtitle").textContent =
         `${passLabel}은(는) 둘 곳이 없어 패스! 다시 ${stayLabel} 차례입니다.`;
       setTimeout(startOthelloTurnTimer, 1200);
@@ -3824,6 +3874,7 @@
   function endOthelloGame(timeoutLoserColor) {
     othelloGameOver = true;
     clearOthelloTurnTimer();
+    document.getElementById("othelloTimerDisplay").classList.add("hidden");
     renderOthelloBoard();
 
     const counts = othelloCountStones();
@@ -3919,7 +3970,7 @@
     { name: "딸기",     emoji: "🍓", r: 19,  score: 3,  bg: "radial-gradient(circle at 32% 28%, #FFB3C6, #F2545B 60%, #C2185B 100%)", pattern: "dots",    accent: "leaf" },
     { name: "포도",     emoji: "🍇", r: 25,  score: 6,  bg: "radial-gradient(circle at 32% 28%, #C9A6E8, #8E6BC7 60%, #5B3E96 100%)", pattern: "smooth",  accent: "stem-leaf" },
     { name: "한라봉",   emoji: "🍊", r: 31,  score: 10, bg: "radial-gradient(circle at 32% 28%, #FFD199, #F5A445 60%, #D9770D 100%)", pattern: "citrus",  accent: "leaf" },
-    { name: "감",       emoji: "🟠", r: 39,  score: 15, bg: "radial-gradient(circle at 32% 28%, #FFCB8E, #EF9D3C 60%, #B9660A 100%)", pattern: "citrus",  accent: "calyx" },
+    { name: "감",       emoji: "🟠", r: 39,  score: 15, bg: "radial-gradient(circle at 32% 28%, #FFB870, #E8720F 55%, #A84A00 100%)", pattern: "smooth",  accent: "calyx" },
     { name: "사과",     emoji: "🍎", r: 48,  score: 21, bg: "radial-gradient(circle at 32% 28%, #FF9E90, #E23B3B 60%, #8E1C1C 100%)", pattern: "smooth",  accent: "stem-leaf" },
     { name: "배",       emoji: "🍐", r: 56,  score: 28, bg: "radial-gradient(circle at 32% 28%, #EAF7D6, #C7E09A 60%, #8FAE5C 100%)", pattern: "speckle", accent: "stem-leaf" },
     { name: "복숭아",   emoji: "🍑", r: 66,  score: 36, bg: "radial-gradient(circle at 32% 28%, #FFE0D6, #FFBBA6 60%, #E8896D 100%)", pattern: "crease",  accent: "leaf" },
