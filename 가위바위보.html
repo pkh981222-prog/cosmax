@@ -1278,6 +1278,9 @@
       linear-gradient(45deg, transparent 44%, #B23A3A 44% 56%, transparent 56%),
       linear-gradient(-45deg, transparent 44%, #B23A3A 44% 56%, transparent 56%);
   }
+  .tetris-card {
+    max-width: 560px;
+  }
   .tetris-layout {
     display: flex;
     align-items: flex-start;
@@ -1289,7 +1292,7 @@
     display: flex;
     flex-direction: column;
     align-items: center;
-    width: 64px;
+    width: 72px;
     flex-shrink: 0;
   }
   .tetris-box-label {
@@ -1329,7 +1332,7 @@
   .tetris-board-wrap {
     position: relative;
     flex: 1 1 auto;
-    max-width: 200px;
+    max-width: 290px;
   }
   .tetris-board {
     width: 100%;
@@ -4569,8 +4572,10 @@
   }
 
   function tetrisNormalDropIntervalMs() {
-    const framesPerRow = Math.pow(0.8 - ((tetrisLevel - 1) * 0.007), tetrisLevel - 1);
-    return Math.max(33, framesPerRow * (1000 / 60));
+    // 테트리스 가이드라인 공식 중력 공식: (0.8-(레벨-1)*0.007)^(레벨-1)의 결과값은
+    // "초" 단위이다(프레임이 아님) - 레벨1이면 1초/줄이 된다.
+    const secondsPerRow = Math.pow(0.8 - ((tetrisLevel - 1) * 0.007), tetrisLevel - 1);
+    return Math.max(33, secondsPerRow * 1000);
   }
 
   function tetrisGameLoop() {
