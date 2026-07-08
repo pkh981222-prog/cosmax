@@ -1643,6 +1643,39 @@
     }
   }
 
+  // ---- 전체 사용자 공유 최고기록 (Firebase Realtime Database) ----
+  // 아래 URL을 본인의 Firebase 프로젝트 Realtime Database 주소로 교체해야 다른 사람과
+  // 기록이 공유된다. (Firebase 콘솔 > Realtime Database 화면 상단에 표시되는
+  // https://프로젝트ID-default-rtdb.리전.firebasedatabase.app 형태의 주소)
+  // 교체하지 않으면 자동으로 이 브라우저에만 기록이 남는 이전 방식으로 동작한다.
+  const FIREBASE_DB_URL = "https://REPLACE-WITH-YOUR-PROJECT.firebasedatabase.app";
+
+  function isFirebaseConfigured() {
+    return !!FIREBASE_DB_URL && !FIREBASE_DB_URL.includes("REPLACE-WITH-YOUR-PROJECT");
+  }
+
+  // path 예: "snake", "othello", "watermelon", "minesweeper/beginner"
+  async function fetchRemoteRecord(path) {
+    if (!isFirebaseConfigured()) return null;
+    try {
+      const res = await fetch(`${FIREBASE_DB_URL}/highscores/${path}.json`);
+      if (!res.ok) return null;
+      return await res.json();
+    } catch (e) {
+      // 오프라인이거나 서버에 문제가 있어도 게임은 로컬 기록으로 계속 진행된다.
+      return null;
+    }
+  }
+
+  function writeRemoteRecord(path, record) {
+    if (!isFirebaseConfigured()) return;
+    fetch(`${FIREBASE_DB_URL}/highscores/${path}.json`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(record)
+    }).catch(() => {});
+  }
+
   function showScreen(id) {
     SCREENS.forEach(s => document.getElementById(s).classList.toggle("hidden", s !== id));
   }
@@ -2310,6 +2343,27 @@
     if (snakeAppleCount > snakeBest.score) {
       snakeBest = { score: snakeAppleCount, name: playerName };
       saveBestRecord("cosmax_snake_best", snakeBest.score, snakeBest.name);
+      renderSnakeScoreboard();
+      syncSnakeBestToServer();
+    }
+  }
+
+  // 다른 사람이 이미 이 브라우저의 캐시된 최고기록보다 더 좋은 기록을 세워뒀을 수 있으므로
+  // 게임을 새로 시작할 때마다 서버 기록을 확인해 더 높으면 화면에 반영한다.
+  async function refreshSnakeBestFromServer() {
+    const remote = await fetchRemoteRecord("snake");
+    if (remote && Number.isFinite(remote.score) && remote.score > snakeBest.score) {
+      snakeBest = { score: remote.score, name: remote.name || "" };
+      saveBestRecord("cosmax_snake_best", snakeBest.score, snakeBest.name);
+      renderSnakeScoreboard();
+    }
+  }
+
+  // 서버에 쓰기 직전에 한번 더 확인해, 그사이 다른 사람이 더 좋은 기록을 올렸다면 덮어쓰지 않는다.
+  async function syncSnakeBestToServer() {
+    const remote = await fetchRemoteRecord("snake");
+    if (!remote || !Number.isFinite(remote.score) || snakeBest.score > remote.score) {
+      writeRemoteRecord("snake", { score: snakeBest.score, name: snakeBest.name });
     }
   }
 
@@ -2334,6 +2388,7 @@
     drawSnakeBoard();
 
     renderSnakeScoreboard();
+    refreshSnakeBestFromServer();
     document.getElementById("snakeResultBanner").textContent = "";
     document.getElementById("snakeStartButton").classList.remove("hidden");
     document.getElementById("snakeRetryButton").classList.add("hidden");
@@ -2557,6 +2612,26 @@
     renderOthelloBoard();
     updateOthelloScoreboard();
     updateOthelloTurnSubtitle();
+    refreshOthelloBestFromServer();
+  }
+
+  // 다른 사람이 이미 이 브라우저의 캐시된 최고기록보다 더 좋은 기록을 세워뒀을 수 있으므로
+  // 게임을 새로 시작할 때마다 서버 기록을 확인해 더 높으면 화면에 반영한다.
+  async function refreshOthelloBestFromServer() {
+    const remote = await fetchRemoteRecord("othello");
+    if (remote && Number.isFinite(remote.score) && remote.score > othelloBest.score) {
+      othelloBest = { score: remote.score, name: remote.name || "" };
+      saveBestRecord("cosmax_othello_best", othelloBest.score, othelloBest.name);
+      updateOthelloScoreboard();
+    }
+  }
+
+  // 서버에 쓰기 직전에 한번 더 확인해, 그사이 다른 사람이 더 좋은 기록을 올렸다면 덮어쓰지 않는다.
+  async function syncOthelloBestToServer() {
+    const remote = await fetchRemoteRecord("othello");
+    if (!remote || !Number.isFinite(remote.score) || othelloBest.score > remote.score) {
+      writeRemoteRecord("othello", { score: othelloBest.score, name: othelloBest.name });
+    }
   }
 
   function othelloInBounds(r, c) {
@@ -2730,6 +2805,7 @@
     if (counts.black !== counts.white && winnerCount > othelloBest.score) {
       othelloBest = { score: winnerCount, name: playerName };
       saveBestRecord("cosmax_othello_best", othelloBest.score, othelloBest.name);
+      syncOthelloBestToServer();
     }
     updateOthelloScoreboard();
 
@@ -2850,6 +2926,26 @@
 
     updateWatermelonScoreboard();
     renderWatermelonBoard();
+    refreshWatermelonBestFromServer();
+  }
+
+  // 다른 사람이 이미 이 브라우저의 캐시된 최고기록보다 더 좋은 기록을 세워뒀을 수 있으므로
+  // 게임을 새로 시작할 때마다 서버 기록을 확인해 더 높으면 화면에 반영한다.
+  async function refreshWatermelonBestFromServer() {
+    const remote = await fetchRemoteRecord("watermelon");
+    if (remote && Number.isFinite(remote.score) && remote.score > wmBest.score) {
+      wmBest = { score: remote.score, name: remote.name || "" };
+      saveBestRecord("cosmax_watermelon_best", wmBest.score, wmBest.name);
+      updateWatermelonScoreboard();
+    }
+  }
+
+  // 서버에 쓰기 직전에 한번 더 확인해, 그사이 다른 사람이 더 좋은 기록을 올렸다면 덮어쓰지 않는다.
+  async function syncWatermelonBestToServer() {
+    const remote = await fetchRemoteRecord("watermelon");
+    if (!remote || !Number.isFinite(remote.score) || wmBest.score > remote.score) {
+      writeRemoteRecord("watermelon", { score: wmBest.score, name: wmBest.name });
+    }
   }
 
   function randomWatermelonDropTier() {
@@ -2867,6 +2963,7 @@
     if (wmScore > wmBest.score) {
       wmBest = { score: wmScore, name: playerName };
       saveBestRecord("cosmax_watermelon_best", wmBest.score, wmBest.name);
+      syncWatermelonBestToServer();
     }
   }
 
@@ -3340,6 +3437,29 @@
     document.getElementById("msFlagModeButton").textContent = "🚩 깃발 모드: OFF";
     document.getElementById("minesweeperSubtitle").textContent =
       `${preset.label} (${msCols}×${msRows}, 지뢰 ${msMineCount}개) - 지뢰를 피해 칸을 열어보세요!`;
+    refreshMinesweeperBestFromServer(difficultyKey);
+  }
+
+  // 다른 사람이 이미 이 브라우저의 캐시된 최고기록보다 더 빠른 기록을 세워뒀을 수 있으므로
+  // 난이도를 선택할 때마다 서버 기록을 확인해 더 빠르면 화면에 반영한다.
+  async function refreshMinesweeperBestFromServer(difficultyKey) {
+    const remote = await fetchRemoteRecord(`minesweeper/${difficultyKey}`);
+    if (!remote || !Number.isFinite(remote.time)) return;
+    const local = msBestTimes[difficultyKey];
+    if (local.time === null || remote.time < local.time) {
+      msBestTimes[difficultyKey] = { time: remote.time, name: remote.name || "" };
+      saveBestTimeRecord(`cosmax_minesweeper_best_${difficultyKey}`, remote.time, remote.name || "");
+      if (msDifficulty === difficultyKey) updateMinesweeperInfo();
+    }
+  }
+
+  // 서버에 쓰기 직전에 한번 더 확인해, 그사이 다른 사람이 더 빠른 기록을 올렸다면 덮어쓰지 않는다.
+  async function syncMinesweeperBestToServer(difficultyKey) {
+    const remote = await fetchRemoteRecord(`minesweeper/${difficultyKey}`);
+    const mine = msBestTimes[difficultyKey];
+    if (!remote || !Number.isFinite(remote.time) || mine.time < remote.time) {
+      writeRemoteRecord(`minesweeper/${difficultyKey}`, { time: mine.time, name: mine.name });
+    }
   }
 
   function startMinesweeperGame(difficultyKey) {
@@ -3404,6 +3524,7 @@
     if (best.time === null || msTimer < best.time) {
       msBestTimes[msDifficulty] = { time: msTimer, name: playerName };
       saveBestTimeRecord(`cosmax_minesweeper_best_${msDifficulty}`, msTimer, playerName);
+      syncMinesweeperBestToServer(msDifficulty);
     }
   }
 
