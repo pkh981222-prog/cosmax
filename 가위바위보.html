@@ -1261,6 +1261,19 @@
   .ms-hint {
     margin-top: 10px;
   }
+  .ms-timer {
+    display: inline-block;
+    margin: 0 auto 12px;
+    padding: 6px 22px;
+    border-radius: 999px;
+    background: #FFFFFF;
+    border: 3px solid #5AA5D8;
+    color: #2A6BA8;
+    font-weight: 900;
+    font-size: 26px;
+    font-variant-numeric: tabular-nums;
+    box-shadow: 0 3px 0 rgba(42, 107, 168, 0.25);
+  }
   .ms-board-wrap {
     overflow-x: auto;
     margin: 10px auto 14px;
@@ -2018,8 +2031,8 @@
     <div class="scoreboard" id="minesweeperInfo">
       <span id="msBestLabel">🏆 최고 -</span>
       <span>💣 <span id="msMineCounter">10</span></span>
-      <span>⏱ <span id="msTimerDisplay">0</span>초</span>
     </div>
+    <div class="ms-timer">⏱ <span id="msTimerDisplay">0.00</span>초</div>
 
     <button class="home-button" id="msFlagModeButton" onclick="toggleMinesweeperFlagMode()">🚩 깃발 모드: OFF</button>
     <p class="subtitle ms-hint">(PC는 우클릭으로 깃발, 모바일은 깃발 모드를 켠 뒤 탭하세요. 숫자 칸 더블클릭 시 주변을 한번에 엽니다.)</p>
@@ -2318,21 +2331,23 @@
       { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[ch]
     ));
   }
-  function formatRecordEntry(entry, valueKey, unit) {
+  // decimals를 지정하면(지뢰찾기의 초 단위 기록처럼) 소수점 자릿수를 고정해서 보여준다.
+  function formatRecordEntry(entry, valueKey, unit, decimals) {
     if (!entry) return null;
     const safeName = entry.name ? escapeHtml(entry.name) : "";
-    return safeName ? `${entry[valueKey]}${unit} (${safeName})` : `${entry[valueKey]}${unit}`;
+    const value = typeof decimals === "number" ? Number(entry[valueKey]).toFixed(decimals) : entry[valueKey];
+    return safeName ? `${value}${unit} (${safeName})` : `${value}${unit}`;
   }
-  function renderTopLabel(list, valueKey, unit) {
-    const formatted = formatRecordEntry(list[0], valueKey, unit);
+  function renderTopLabel(list, valueKey, unit, decimals) {
+    const formatted = formatRecordEntry(list[0], valueKey, unit, decimals);
     return formatted ? `🏆 최고 ${formatted}` : "🏆 최고 -";
   }
   // 1등은 화면 위쪽 정보 바에 이미 표시하므로, 여기서는 2등/3등만 만들어 화면 하단에 보여준다.
-  function renderRankLines(list, valueKey, unit) {
+  function renderRankLines(list, valueKey, unit, decimals) {
     const medals = ["", "🥈", "🥉"];
     const lines = [];
     for (let i = 1; i < 3; i++) {
-      const formatted = formatRecordEntry(list[i], valueKey, unit);
+      const formatted = formatRecordEntry(list[i], valueKey, unit, decimals);
       lines.push(`<div>${medals[i]} ${i + 1}등: ${formatted || "-"}</div>`);
     }
     return lines.join("");
@@ -3260,7 +3275,6 @@
     snakeBody.unshift(newHead);
     if (willEatApple) {
       snakeAppleCount++;
-      bumpSnakeBest();
       placeSnakeApple();
     } else {
       snakeBody.pop();
@@ -3276,6 +3290,7 @@
     snakeRunning = false;
     clearTimeout(snakeTimer);
     clearInterval(snakeSpeedTimer);
+    bumpSnakeBest();
     playAnimatedBanner(document.getElementById("snakeResultBanner"), `💥 게임 오버! 길이 ${snakeBody.length}`, "lose");
     document.getElementById("snakeRetryButton").classList.remove("hidden");
 
@@ -4249,7 +4264,6 @@
 
       if (type === "poof") {
         wmScore += WATERMELON_POOF_BONUS;
-        bumpWatermelonBest();
         playAnimatedBanner(document.getElementById("watermelonResultBanner"), `🍉🍉 수박 합체 보너스! +${WATERMELON_POOF_BONUS}`, "win");
         setTimeout(() => {
           const banner = document.getElementById("watermelonResultBanner");
@@ -4272,7 +4286,6 @@
         spawnTime: performance.now() - WATERMELON_GRACE_MS
       });
       wmScore += WATERMELON_TIERS[newTier].score;
-      bumpWatermelonBest();
     });
 
     updateWatermelonScoreboard();
@@ -4414,6 +4427,8 @@
   function endWatermelonGame() {
     wmRunning = false;
     if (wmAnimFrame) clearTimeout(wmAnimFrame);
+    bumpWatermelonBest();
+    updateWatermelonScoreboard();
 
     playAnimatedBanner(document.getElementById("watermelonResultBanner"), `💥 게임 오버! 최종 점수 ${wmScore}`, "lose");
     document.getElementById("watermelonRetryButton").classList.remove("hidden");
@@ -4466,6 +4481,7 @@
   let msFlagMode = false;
   let msTimer = 0;
   let msTimerInterval = null;
+  let msTimerStartedAt = 0;
   // 난이도별 최고 기록(가장 빠른 클리어 시간)을 따로 관리한다 - 보드 크기가 다르면
   // 시간을 서로 비교하는 게 의미가 없기 때문.
   // 난이도별 랭킹(1~3등, 시간이 짧을수록 좋음)을 따로 관리한다 - 보드 크기가 다르면
@@ -4587,11 +4603,11 @@
 
   function updateMinesweeperInfo() {
     document.getElementById("msMineCounter").textContent = Math.max(0, msMineCount - msFlagsPlaced);
-    document.getElementById("msTimerDisplay").textContent = msTimer;
+    document.getElementById("msTimerDisplay").textContent = msTimer.toFixed(2);
 
     const top = msTopByDifficulty[msDifficulty];
-    document.getElementById("msBestLabel").textContent = renderTopLabel(top, "time", "초");
-    document.getElementById("msLeaderboard").innerHTML = renderRankLines(top, "time", "초");
+    document.getElementById("msBestLabel").textContent = renderTopLabel(top, "time", "초", 2);
+    document.getElementById("msLeaderboard").innerHTML = renderRankLines(top, "time", "초", 2);
   }
 
   function bumpMinesweeperBest() {
@@ -4603,17 +4619,26 @@
     syncMinesweeperBestToServer(msDifficulty);
   }
 
+  // 1초 단위로만 세면 잘 안 보인다는 피드백이 있어, 실제 경과시간을 밀리초 단위로
+  // 측정해서 소수 둘째 자리(0.01초)까지 부드럽게 보여준다.
   function startMinesweeperTimer() {
     stopMinesweeperTimer();
     msTimer = 0;
+    msTimerStartedAt = performance.now();
     updateMinesweeperInfo();
     msTimerInterval = setInterval(() => {
-      msTimer++;
+      msTimer = (performance.now() - msTimerStartedAt) / 1000;
       updateMinesweeperInfo();
-    }, 1000);
+    }, 30);
   }
 
   function stopMinesweeperTimer() {
+    if (msTimerInterval) {
+      // 멈추는 순간의 정확한 경과시간을 0.01초 단위로 확정해, 기록/배너에 쓰는
+      // 값이 마지막 주기 업데이트(최대 30ms)만큼 어긋나지 않게 한다.
+      const elapsedSec = (performance.now() - msTimerStartedAt) / 1000;
+      msTimer = Math.round(elapsedSec * 100) / 100;
+    }
     if (msTimerInterval) clearInterval(msTimerInterval);
     msTimerInterval = null;
   }
@@ -4763,7 +4788,7 @@
     updateMinesweeperInfo();
     const banner = document.getElementById("minesweeperResultBanner");
     if (win) {
-      playAnimatedBanner(banner, `🎉 클리어! (${msTimer}초)`, "win");
+      playAnimatedBanner(banner, `🎉 클리어! (${msTimer.toFixed(2)}초)`, "win");
     } else {
       playAnimatedBanner(banner, `💥 게임 오버!`, "lose");
     }
