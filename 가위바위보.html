@@ -1184,6 +1184,18 @@
     animation: rankNameIn 0.5s ease forwards;
     animation-delay: 0.2s;
   }
+  .ms-card {
+    max-width: 720px;
+  }
+  .ms-alert-subtitle {
+    color: #E0201A;
+    font-weight: 800;
+    font-size: 17px;
+    text-shadow: 0 1px 0 rgba(255,255,255,0.5);
+  }
+  .ms-hint {
+    margin-top: 10px;
+  }
   .ms-board-wrap {
     overflow-x: auto;
     margin: 10px auto 14px;
@@ -1191,24 +1203,25 @@
     padding-bottom: 6px;
   }
   .ms-board {
-    display: inline-grid;
-    gap: 2px;
+    display: grid;
+    gap: 1px;
     background: #4A2C1D;
-    padding: 6px;
+    padding: 4px;
     border-radius: 8px;
+    width: 100%;
+    box-sizing: border-box;
     margin: 0 auto;
   }
   .ms-cell {
-    width: 26px;
-    height: 26px;
-    min-width: 26px;
-    min-height: 26px;
+    width: 100%;
+    aspect-ratio: 1 / 1;
+    min-width: 0;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 14px;
+    font-size: var(--ms-font-size, 14px);
     font-weight: 800;
-    border-radius: 4px;
+    border-radius: 3px;
     background: #FBEFE0;
     box-shadow: 0 2px 4px rgba(74,44,23,0.25), inset 0 1px 0 rgba(255,255,255,0.6);
     cursor: pointer;
@@ -1251,9 +1264,6 @@
     background:
       linear-gradient(45deg, transparent 44%, #B23A3A 44% 56%, transparent 56%),
       linear-gradient(-45deg, transparent 44%, #B23A3A 44% 56%, transparent 56%);
-  }
-  @media (max-width: 480px) {
-    .ms-cell { width: 22px; height: 22px; min-width: 22px; min-height: 22px; font-size: 12px; }
   }
   @media (max-width: 900px) {
     .choices { display: grid; grid-template-columns: repeat(2, 1fr); justify-items: center; }
@@ -1542,17 +1552,18 @@
     <button class="home-button" onclick="showIntro()">🏠 처음으로</button>
   </div>
 
-  <div class="card hidden" id="minesweeperScreen">
+  <div class="card ms-card hidden" id="minesweeperScreen">
     <h1>💣 지뢰찾기</h1>
-    <p class="subtitle" id="minesweeperSubtitle">지뢰를 피해 칸을 열어보세요!</p>
+    <p class="subtitle ms-alert-subtitle" id="minesweeperSubtitle">지뢰를 피해 칸을 열어보세요!</p>
 
     <div class="scoreboard" id="minesweeperInfo">
+      <span id="msBestLabel">🏆 최고 -</span>
       <span>💣 <span id="msMineCounter">10</span></span>
       <span>⏱ <span id="msTimerDisplay">0</span>초</span>
     </div>
 
     <button class="home-button" id="msFlagModeButton" onclick="toggleMinesweeperFlagMode()">🚩 깃발 모드: OFF</button>
-    <p class="subtitle ladder-hint">(PC는 우클릭으로 깃발, 모바일은 깃발 모드를 켠 뒤 탭하세요. 숫자 칸 더블클릭 시 주변을 한번에 엽니다.)</p>
+    <p class="subtitle ms-hint">(PC는 우클릭으로 깃발, 모바일은 깃발 모드를 켠 뒤 탭하세요. 숫자 칸 더블클릭 시 주변을 한번에 엽니다.)</p>
 
     <div class="ms-board-wrap">
       <div class="ms-board" id="minesweeperBoard"></div>
@@ -1667,10 +1678,8 @@
     selectedGame = game;
     if (game === "ladder") {
       showScreen("ladderSetupScreen");
-    } else if (game === "minesweeper") {
-      showScreen("minesweeperSetupScreen");
     } else {
-      // 오셀로도 최고 기록에 이름을 남길 수 있도록 다른 게임처럼 이름 입력을 거치게 한다.
+      // 오셀로/지뢰찾기도 최고 기록에 이름을 남길 수 있도록 다른 게임처럼 이름 입력을 거치게 한다.
       showScreen("nameScreen");
     }
   }
@@ -1696,6 +1705,8 @@
     } else if (selectedGame === "othello") {
       initOthelloState();
       showScreen("othelloScreen");
+    } else if (selectedGame === "minesweeper") {
+      showScreen("minesweeperSetupScreen");
     }
   }
 
@@ -3264,6 +3275,31 @@
   let msFlagMode = false;
   let msTimer = 0;
   let msTimerInterval = null;
+  // 난이도별 최고 기록(가장 빠른 클리어 시간)을 따로 관리한다 - 보드 크기가 다르면
+  // 시간을 서로 비교하는 게 의미가 없기 때문.
+  let msBestTimes = {
+    beginner: loadBestTimeRecord("cosmax_minesweeper_best_beginner"),
+    intermediate: loadBestTimeRecord("cosmax_minesweeper_best_intermediate"),
+    expert: loadBestTimeRecord("cosmax_minesweeper_best_expert")
+  };
+
+  function loadBestTimeRecord(key) {
+    try {
+      const raw = localStorage.getItem(key);
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (parsed && Number.isFinite(parsed.time)) {
+          return { time: parsed.time, name: parsed.name || "" };
+        }
+      }
+    } catch (e) {}
+    return { time: null, name: "" };
+  }
+  function saveBestTimeRecord(key, time, name) {
+    try {
+      localStorage.setItem(key, JSON.stringify({ time, name }));
+    } catch (e) {}
+  }
 
   function msNeighbors(r, c) {
     const result = [];
@@ -3339,11 +3375,36 @@
       }
       msCellEls.push(rowEls);
     }
+
+    // 칸 크기가 난이도(열 개수)와 화면 폭에 따라 달라지므로, 실제로 렌더링된 칸 크기를
+    // 측정해 숫자/이모지 글자 크기를 맞춰준다. 이렇게 하면 상급(30칸)도 가로 스크롤 없이
+    // 카드 폭에 딱 맞게 줄어들면서 글자도 항상 알맞은 크기를 유지한다.
+    requestAnimationFrame(() => {
+      const sample = msCellEls[0] && msCellEls[0][0];
+      if (!sample) return;
+      const cellPx = sample.getBoundingClientRect().width;
+      const fontPx = Math.max(7, Math.min(18, cellPx * 0.55));
+      board.style.setProperty("--ms-font-size", `${fontPx}px`);
+    });
   }
 
   function updateMinesweeperInfo() {
     document.getElementById("msMineCounter").textContent = Math.max(0, msMineCount - msFlagsPlaced);
     document.getElementById("msTimerDisplay").textContent = msTimer;
+
+    const best = msBestTimes[msDifficulty];
+    const bestLabel = best.time === null
+      ? "🏆 최고 -"
+      : (best.name ? `🏆 최고 ${best.time}초 (${best.name})` : `🏆 최고 ${best.time}초`);
+    document.getElementById("msBestLabel").textContent = bestLabel;
+  }
+
+  function bumpMinesweeperBest() {
+    const best = msBestTimes[msDifficulty];
+    if (best.time === null || msTimer < best.time) {
+      msBestTimes[msDifficulty] = { time: msTimer, name: playerName };
+      saveBestTimeRecord(`cosmax_minesweeper_best_${msDifficulty}`, msTimer, playerName);
+    }
   }
 
   function startMinesweeperTimer() {
@@ -3488,6 +3549,7 @@
   function endMinesweeperGame(win) {
     msGameOver = true;
     stopMinesweeperTimer();
+    if (win) bumpMinesweeperBest();
 
     for (let r = 0; r < msRows; r++) {
       for (let c = 0; c < msCols; c++) {
