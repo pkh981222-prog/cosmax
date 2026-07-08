@@ -735,6 +735,26 @@
     background: radial-gradient(circle at 35% 30%, #9CCB5A, #557A2E 75%);
     z-index: 3;
   }
+  .snake-versus-card {
+    max-width: 640px;
+  }
+  .snake-versus-layout {
+    display: flex;
+    gap: 14px;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+  .snake-player-panel {
+    flex: 1 1 240px;
+    max-width: 280px;
+    min-width: 180px;
+  }
+  .snake-versus-name {
+    font-weight: 800;
+    color: #3D2817;
+    font-size: 14px;
+    margin-bottom: 4px;
+  }
   .snake-eye {
     position: absolute;
     width: 18%;
@@ -1774,6 +1794,86 @@
     <button class="home-button" onclick="showIntro()">🏠 처음으로</button>
   </div>
 
+  <div class="card hidden" id="snakeModeScreen">
+    <h1>🐍 뱀 게임</h1>
+    <p class="subtitle">어떤 모드로 플레이할까요?</p>
+    <div class="game-select">
+      <button class="retry-button" onclick="chooseSnakeSolo()">🙋 솔로모드</button>
+      <button class="retry-button" onclick="showScreen('snakeVersusNamesScreen')">⚔️ 대결모드 (2인용)</button>
+    </div>
+    <button class="home-button" onclick="showIntro()">🏠 처음으로</button>
+  </div>
+
+  <div class="card hidden" id="snakeVersusNamesScreen">
+    <h1>⚔️ 뱀 게임 대결모드</h1>
+    <p class="subtitle">한 키보드로 두 사람이 대결합니다. 이름을 입력해주세요!</p>
+    <input type="text" class="name-input" id="snakeP1NameInput" placeholder="1P 이름" maxlength="10"
+      onkeydown="if(event.key==='Enter') document.getElementById('snakeP2NameInput').focus()">
+    <input type="text" class="name-input" id="snakeP2NameInput" placeholder="2P 이름" maxlength="10"
+      onkeydown="if(event.key==='Enter') startSnakeVersusGame()">
+    <p class="subtitle ms-hint">
+      테트리스 대결모드처럼 각자 자기 보드에서 동시에 플레이합니다. 벽이나 자기 몸에
+      부딪히면 탈락! 먼저 죽는 사람이 지고, 오래 살아남는 사람이 이깁니다.
+    </p>
+
+    <div class="tetris-keymap-diagram">
+      <div class="tetris-keymap-col">
+        <div class="tetris-keymap-title">🟢 1P (왼쪽)</div>
+        <div class="tetris-keymap-row" style="margin-left:20px">
+          <div class="tetris-key">W<span>▲</span></div>
+        </div>
+        <div class="tetris-keymap-row">
+          <div class="tetris-key">A<span>◀</span></div>
+          <div class="tetris-key">S<span>▼</span></div>
+          <div class="tetris-key">D<span>▶</span></div>
+        </div>
+      </div>
+      <div class="tetris-keymap-col">
+        <div class="tetris-keymap-title">🔵 2P (오른쪽)</div>
+        <div class="tetris-keymap-row" style="margin-left:40px">
+          <div class="tetris-key">↑<span>▲</span></div>
+        </div>
+        <div class="tetris-keymap-row">
+          <div class="tetris-key">←<span>◀</span></div>
+          <div class="tetris-key">↓<span>▼</span></div>
+          <div class="tetris-key">→<span>▶</span></div>
+        </div>
+      </div>
+    </div>
+
+    <button class="retry-button" onclick="startSnakeVersusGame()">⚔️ 대결 시작!</button>
+    <button class="home-button" onclick="showScreen('snakeModeScreen')">🔙 뒤로</button>
+  </div>
+
+  <div class="card snake-versus-card hidden" id="snakeVersusScreen">
+    <h1>⚔️ 뱀 게임 대결모드</h1>
+    <p class="subtitle" id="snakeVersusStatus">먼저 죽는 사람이 집니다!</p>
+
+    <div class="snake-versus-layout">
+      <div class="snake-player-panel">
+        <div class="snake-versus-name" id="snakeVsName1Label">🟢 1P 🍎0</div>
+        <div class="snake-board" id="snakeBoardP1">
+          <div class="snake-terrain" id="snakeTerrainP1"></div>
+          <div class="snake-layer" id="snakeLayerP1"></div>
+        </div>
+      </div>
+      <div class="snake-player-panel">
+        <div class="snake-versus-name" id="snakeVsName2Label">🔵 2P 🍎0</div>
+        <div class="snake-board" id="snakeBoardP2">
+          <div class="snake-terrain" id="snakeTerrainP2"></div>
+          <div class="snake-layer" id="snakeLayerP2"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="result-box">
+      <div class="result-banner" id="snakeVersusResultBanner"></div>
+    </div>
+
+    <button class="retry-button hidden" id="snakeVersusRetryButton" onclick="restartSnakeVersusGame()">🔄 다시하기</button>
+    <button class="home-button" onclick="showIntro()">🏠 처음으로</button>
+  </div>
+
   <div class="card hidden" id="snakeScreen">
     <h1>🐍 뱀 게임</h1>
     <p class="subtitle" id="snakeSubtitle">게임 시작 버튼을 눌러보세요!</p>
@@ -2131,7 +2231,8 @@
   const SCREENS = [
     "introScreen", "nameScreen", "gameScreen",
     "ladderSetupScreen", "ladderNamesScreen", "ladderBoardScreen",
-    "rouletteSetupScreen", "rouletteScreen", "snakeScreen", "othelloNamesScreen", "othelloScreen", "watermelonScreen",
+    "rouletteSetupScreen", "rouletteScreen", "snakeModeScreen", "snakeScreen",
+    "snakeVersusNamesScreen", "snakeVersusScreen", "othelloNamesScreen", "othelloScreen", "watermelonScreen",
     "minesweeperSetupScreen", "minesweeperScreen", "tetrisModeScreen", "tetrisScreen",
     "tetrisVersusNamesScreen", "tetrisVersusScreen"
   ];
@@ -2269,6 +2370,8 @@
       showScreen("othelloNamesScreen");
     } else if (game === "tetris") {
       showScreen("tetrisModeScreen");
+    } else if (game === "snake") {
+      showScreen("snakeModeScreen");
     } else {
       // 지뢰찾기 등도 최고 기록에 이름을 남길 수 있도록 다른 게임처럼 이름 입력을 거치게 한다.
       showScreen("nameScreen");
@@ -2277,6 +2380,11 @@
 
   function chooseTetrisSolo() {
     selectedGame = "tetris";
+    showScreen("nameScreen");
+  }
+
+  function chooseSnakeSolo() {
+    selectedGame = "snake";
     showScreen("nameScreen");
   }
 
@@ -3145,6 +3253,265 @@
   function restartSnakeGame() {
     initSnakeState();
   }
+
+  // ---- 뱀 게임 대결모드 (테트리스 대결모드처럼 각자 자기 보드에서 동시 플레이,
+  //      서로 부딪히는 것이 아니라 먼저 죽는 쪽이 패배) ----
+  let snakeVs1 = null, snakeVs2 = null;
+  let snakeVsName1 = "1P", snakeVsName2 = "2P";
+  let snakeVsTimer = null;
+  let snakeVsSpeedTimer = null;
+  let snakeVsCurrentInterval = SNAKE_BASE_INTERVAL;
+  let snakeVsRunning = false;
+
+  function snakeVsCreatePlayerState(name) {
+    const startX = Math.floor(SNAKE_COLS / 2);
+    const startY = Math.floor(SNAKE_ROWS / 2);
+    const state = {
+      name,
+      body: [{ x: startX, y: startY }, { x: startX - 1, y: startY }, { x: startX - 2, y: startY }],
+      dir: { x: 1, y: 0 },
+      pendingDir: { x: 1, y: 0 },
+      apple: null,
+      alive: true,
+      appleCount: 0
+    };
+    snakeVsPlaceApple(state);
+    return state;
+  }
+
+  function snakeVsPlaceApple(state) {
+    let cell;
+    do {
+      cell = { x: Math.floor(Math.random() * SNAKE_COLS), y: Math.floor(Math.random() * SNAKE_ROWS) };
+    } while (state.body.some(s => s.x === cell.x && s.y === cell.y));
+    state.apple = cell;
+  }
+
+  function snakeVsRenderTerrain(state, suffix) {
+    const terrain = document.getElementById("snakeTerrain" + suffix);
+    terrain.innerHTML = "";
+    terrain.style.display = "grid";
+    terrain.style.gridTemplateColumns = `repeat(${SNAKE_COLS}, 1fr)`;
+    terrain.style.gridTemplateRows = `repeat(${SNAKE_ROWS}, 1fr)`;
+
+    const used = new Set(state.body.map(s => `${s.x},${s.y}`));
+    used.add(`${state.apple.x},${state.apple.y}`);
+
+    const decoCells = new Set();
+    let attempts = 0;
+    while (decoCells.size < 55 && attempts < 500) {
+      attempts++;
+      const x = Math.floor(Math.random() * SNAKE_COLS);
+      const y = Math.floor(Math.random() * SNAKE_ROWS);
+      const key = `${x},${y}`;
+      if (used.has(key)) continue;
+      decoCells.add(key);
+    }
+
+    for (let y = 0; y < SNAKE_ROWS; y++) {
+      for (let x = 0; x < SNAKE_COLS; x++) {
+        const cell = document.createElement("div");
+        cell.className = "snake-grid-cell";
+        const key = `${x},${y}`;
+        if (decoCells.has(key)) {
+          cell.classList.add("snake-grid-cell-deco");
+          cell.textContent = SNAKE_TERRAIN_ITEMS[Math.floor(Math.random() * SNAKE_TERRAIN_ITEMS.length)];
+        }
+        terrain.appendChild(cell);
+      }
+    }
+  }
+
+  function snakeVsDrawBoard(state, suffix) {
+    const layer = document.getElementById("snakeLayer" + suffix);
+    layer.innerHTML = "";
+
+    const appleEl = document.createElement("div");
+    appleEl.className = "snake-apple";
+    placeSnakeElement(appleEl, state.apple.x, state.apple.y, 1.3);
+    const appleBody = document.createElement("div");
+    appleBody.className = "snake-apple-body";
+    const appleStem = document.createElement("div");
+    appleStem.className = "snake-apple-stem";
+    const appleLeaf = document.createElement("div");
+    appleLeaf.className = "snake-apple-leaf";
+    const appleShine = document.createElement("div");
+    appleShine.className = "snake-apple-shine";
+    appleEl.append(appleBody, appleStem, appleLeaf, appleShine);
+    layer.appendChild(appleEl);
+
+    state.body.forEach((seg, i) => {
+      const isHead = i === 0;
+      const isTail = i === state.body.length - 1 && state.body.length > 1;
+
+      const segEl = document.createElement("div");
+      segEl.className = "snake-segment" +
+        (isHead ? " snake-head" : "") +
+        (!isHead && i % 2 === 0 ? " snake-pattern" : "");
+
+      let sizeFactor = 1.2;
+      if (isTail) sizeFactor = 0.75;
+      else if (isHead) sizeFactor = 1.4;
+
+      placeSnakeElement(segEl, seg.x, seg.y, sizeFactor);
+
+      if (isHead) {
+        const angle = state.dir.x === 1 ? 0 : state.dir.x === -1 ? 180 : state.dir.y === 1 ? 90 : 270;
+        segEl.style.transform = `rotate(${angle}deg)`;
+        const eyeTop = document.createElement("div");
+        eyeTop.className = "snake-eye snake-eye-top";
+        const eyeBottom = document.createElement("div");
+        eyeBottom.className = "snake-eye snake-eye-bottom";
+        const tongue = document.createElement("div");
+        tongue.className = "snake-tongue";
+        segEl.append(eyeTop, eyeBottom, tongue);
+      }
+      layer.appendChild(segEl);
+    });
+  }
+
+  function snakeVsUpdateLabel(state, suffix, emoji) {
+    document.getElementById("snakeVsName" + suffix + "Label").textContent = `${emoji} ${state.name} 🍎${state.appleCount}`;
+  }
+
+  function snakeVsSetDirection(state, dx, dy) {
+    if (!snakeVsRunning || !state.alive) return;
+    if (state.body.length > 1 && dx === -state.dir.x && dy === -state.dir.y) return;
+    state.pendingDir = { x: dx, y: dy };
+  }
+
+  function scheduleSnakeVsTick() {
+    clearTimeout(snakeVsTimer);
+    snakeVsTimer = setTimeout(snakeVsTick, snakeVsCurrentInterval);
+  }
+
+  // 서로 다른 보드에서 완전히 독립적으로 한 칸씩 움직인다(상대와 부딪히는 개념 없음).
+  // 벽이나 자기 몸에 부딪히면 그 사람만 탈락하고, 먼저 탈락하는 쪽이 패배한다.
+  function snakeVsProcessOne(state) {
+    if (!state.alive) return;
+    state.dir = state.pendingDir;
+    const head = state.body[0];
+    const newHead = { x: head.x + state.dir.x, y: head.y + state.dir.y };
+
+    if (newHead.x < 0 || newHead.x >= SNAKE_COLS || newHead.y < 0 || newHead.y >= SNAKE_ROWS) {
+      state.alive = false;
+      return;
+    }
+
+    const willEat = newHead.x === state.apple.x && newHead.y === state.apple.y;
+    const bodyToCheck = willEat ? state.body : state.body.slice(0, -1);
+    if (bodyToCheck.some(s => s.x === newHead.x && s.y === newHead.y)) {
+      state.alive = false;
+      return;
+    }
+
+    state.body.unshift(newHead);
+    if (willEat) {
+      state.appleCount++;
+      snakeVsPlaceApple(state);
+    } else {
+      state.body.pop();
+    }
+  }
+
+  function snakeVsTick() {
+    snakeVsProcessOne(snakeVs1);
+    snakeVsProcessOne(snakeVs2);
+
+    snakeVsDrawBoard(snakeVs1, "P1");
+    snakeVsDrawBoard(snakeVs2, "P2");
+    snakeVsUpdateLabel(snakeVs1, "1", "🟢");
+    snakeVsUpdateLabel(snakeVs2, "2", "🔵");
+
+    if (!snakeVs1.alive || !snakeVs2.alive) {
+      endSnakeVsGame();
+      return;
+    }
+    scheduleSnakeVsTick();
+  }
+
+  function endSnakeVsGame() {
+    snakeVsRunning = false;
+    clearTimeout(snakeVsTimer);
+    clearInterval(snakeVsSpeedTimer);
+
+    let resultText, bannerClass;
+    if (!snakeVs1.alive && !snakeVs2.alive) {
+      resultText = "🤝 무승부! 둘 다 같은 순간에 탈락했습니다";
+      bannerClass = "draw";
+    } else if (!snakeVs1.alive) {
+      resultText = `🎉 ${snakeVs2.name} 승리!`;
+      bannerClass = "win";
+    } else {
+      resultText = `🎉 ${snakeVs1.name} 승리!`;
+      bannerClass = "win";
+    }
+    playAnimatedBanner(document.getElementById("snakeVersusResultBanner"), resultText, bannerClass);
+    document.getElementById("snakeVersusRetryButton").classList.remove("hidden");
+    document.getElementById("snakeVersusStatus").textContent = "게임 종료!";
+  }
+
+  function initSnakeVsState() {
+    clearTimeout(snakeVsTimer);
+    clearInterval(snakeVsSpeedTimer);
+
+    snakeVs1 = snakeVsCreatePlayerState(snakeVsName1);
+    snakeVs2 = snakeVsCreatePlayerState(snakeVsName2);
+    snakeVsCurrentInterval = SNAKE_BASE_INTERVAL;
+    snakeVsRunning = false;
+
+    document.getElementById("snakeBoardP1").style.aspectRatio = `${SNAKE_COLS} / ${SNAKE_ROWS}`;
+    document.getElementById("snakeBoardP2").style.aspectRatio = `${SNAKE_COLS} / ${SNAKE_ROWS}`;
+
+    snakeVsRenderTerrain(snakeVs1, "P1");
+    snakeVsRenderTerrain(snakeVs2, "P2");
+    snakeVsDrawBoard(snakeVs1, "P1");
+    snakeVsDrawBoard(snakeVs2, "P2");
+    snakeVsUpdateLabel(snakeVs1, "1", "🟢");
+    snakeVsUpdateLabel(snakeVs2, "2", "🔵");
+
+    document.getElementById("snakeVersusResultBanner").textContent = "";
+    document.getElementById("snakeVersusRetryButton").classList.add("hidden");
+    document.getElementById("snakeVersusStatus").textContent = "먼저 죽는 사람이 집니다!";
+  }
+
+  function snakeVsBeginTicking() {
+    snakeVsRunning = true;
+    scheduleSnakeVsTick();
+    clearInterval(snakeVsSpeedTimer);
+    snakeVsSpeedTimer = setInterval(() => {
+      if (!snakeVsRunning) return;
+      snakeVsCurrentInterval = Math.max(SNAKE_MIN_INTERVAL, snakeVsCurrentInterval - SNAKE_SPEEDUP_STEP);
+    }, SNAKE_SPEEDUP_INTERVAL_MS);
+  }
+
+  function startSnakeVersusGame() {
+    const p1Input = document.getElementById("snakeP1NameInput").value.trim();
+    const p2Input = document.getElementById("snakeP2NameInput").value.trim();
+    snakeVsName1 = p1Input || "1P";
+    snakeVsName2 = p2Input || "2P";
+    initSnakeVsState();
+    showScreen("snakeVersusScreen");
+    snakeVsBeginTicking();
+  }
+
+  function restartSnakeVersusGame() {
+    initSnakeVsState();
+    showScreen("snakeVersusScreen");
+    snakeVsBeginTicking();
+  }
+
+  document.addEventListener("keydown", (e) => {
+    if (!snakeVsRunning) return;
+    if (e.key === "w" || e.key === "W") { snakeVsSetDirection(snakeVs1, 0, -1); e.preventDefault(); }
+    else if (e.key === "s" || e.key === "S") { snakeVsSetDirection(snakeVs1, 0, 1); e.preventDefault(); }
+    else if (e.key === "a" || e.key === "A") { snakeVsSetDirection(snakeVs1, -1, 0); e.preventDefault(); }
+    else if (e.key === "d" || e.key === "D") { snakeVsSetDirection(snakeVs1, 1, 0); e.preventDefault(); }
+    else if (e.key === "ArrowUp") { snakeVsSetDirection(snakeVs2, 0, -1); e.preventDefault(); }
+    else if (e.key === "ArrowDown") { snakeVsSetDirection(snakeVs2, 0, 1); e.preventDefault(); }
+    else if (e.key === "ArrowLeft") { snakeVsSetDirection(snakeVs2, -1, 0); e.preventDefault(); }
+    else if (e.key === "ArrowRight") { snakeVsSetDirection(snakeVs2, 1, 0); e.preventDefault(); }
+  });
 
   // ---- 오셀로 ----
   const OTHELLO_SIZE = 8;
